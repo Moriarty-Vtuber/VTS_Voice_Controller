@@ -1,0 +1,59 @@
+2025-10-07 22:18:11.115 | INFO     | __main__:main:111 - Configuration loaded.
+2025-10-07 22:29:46.265 | INFO     | __main__:main:111 - Configuration loaded.
+2025-10-07 22:29:46.266 | WARNING  | voice_engine.recognizer:__init__:26 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-07 22:29:46.266 | INFO     | voice_engine.recognizer:__init__:31 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-07 22:29:46.266 | WARNING  | voice_engine.recognizer:_check_and_download_model:45 - Streaming Zipformer model not found in F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Attempting to download...
+2025-10-07 22:29:46.895 | ERROR    | voice_engine.utils:get_github_asset_url:41 - No match found for filename: sherpa-onnx-streaming-zipformer-en-20M-2023-02-17 in release v1.4.0.
+2025-10-07 22:29:46.897 | ERROR    | voice_engine.recognizer:_check_and_download_model:64 - Could not find download URL for model sherpa-onnx-streaming-zipformer-en-20M-2023-02-17 in release v1.4.0. Please check the model name and release tag.
+2025-10-07 22:30:42.922 | INFO     | __main__:main:111 - Configuration loaded.
+2025-10-07 22:30:42.922 | WARNING  | voice_engine.recognizer:__init__:26 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-07 22:30:42.923 | INFO     | voice_engine.recognizer:__init__:31 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-07 22:30:42.923 | WARNING  | voice_engine.recognizer:_check_and_download_model:45 - Streaming Zipformer model not found in F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Attempting to download...
+2025-10-07 22:30:43.557 | ERROR    | voice_engine.utils:get_github_asset_url:41 - No match found for filename: sherpa-onnx-streaming-zipformer-en-20M-2023-02-17 in release v1.4.0.
+2025-10-07 22:30:43.558 | ERROR    | voice_engine.recognizer:_check_and_download_model:64 - Could not find download URL for model sherpa-onnx-streaming-zipformer-en-20M-2023-02-17 in release v1.4.0. Please check the model name and release tag.
+2025-10-07 22:50:57.495 | INFO     | __main__:main:111 - Configuration loaded.
+2025-10-07 22:50:57.495 | WARNING  | voice_engine.recognizer:__init__:26 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-07 22:50:57.495 | INFO     | voice_engine.recognizer:__init__:31 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-07 22:50:57.495 | WARNING  | voice_engine.recognizer:_check_and_download_model:45 - Streaming Zipformer model not found in F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Downloading the model...
+2025-10-07 22:50:57.496 | WARNING  | voice_engine.utils:check_and_extract_local_file:164 - Local file not found or not a tar.bz2 archive: F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2
+2025-10-07 22:50:57.496 | INFO     | voice_engine.recognizer:_check_and_download_model:51 - Local file not found. Downloading...
+2025-10-07 22:50:57.497 | INFO     | voice_engine.utils:download_and_extract:85 - 🏃‍♂️Downloading https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2 to F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2...
+2025-10-07 22:51:20.507 | INFO     | voice_engine.utils:download_and_extract:106 - Downloaded sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2 successfully.
+2025-10-07 22:51:20.507 | INFO     | voice_engine.utils:download_and_extract:110 - Extracting sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2...
+2025-10-07 22:51:27.720 | INFO     | voice_engine.utils:download_and_extract:113 - Extraction completed.
+2025-10-07 22:52:00.784 | INFO     | __main__:main:111 - Configuration loaded.
+2025-10-07 22:52:00.784 | WARNING  | voice_engine.recognizer:__init__:26 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-07 22:52:00.785 | INFO     | voice_engine.recognizer:__init__:31 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-07 22:52:00.785 | WARNING  | voice_engine.recognizer:_check_and_download_model:45 - Streaming Zipformer model not found in F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Downloading the model...
+2025-10-07 22:52:00.785 | INFO     | voice_engine.utils:check_and_extract_local_file:145 - ✅ Extracted directory exists: F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17, no operation needed.
+2025-10-07 22:52:00.786 | INFO     | voice_engine.recognizer:_check_and_download_model:54 - Local file found. Using existing file.
+2025-10-07 22:54:33.970 | INFO     | __main__:main:111 - Configuration loaded.
+2025-10-07 22:54:33.970 | WARNING  | voice_engine.recognizer:__init__:26 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-07 22:54:33.970 | INFO     | voice_engine.recognizer:__init__:31 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-07 22:54:33.970 | WARNING  | voice_engine.recognizer:_check_and_download_model:45 - Streaming Zipformer model not found in F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Downloading the model...
+2025-10-07 22:54:33.970 | WARNING  | voice_engine.utils:check_and_extract_local_file:153 - Extracted directory F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17 exists but is missing some expected files. Forcing re-download.
+2025-10-07 22:54:33.986 | WARNING  | voice_engine.utils:check_and_extract_local_file:173 - Local file not found or not a tar.bz2 archive: F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2
+2025-10-07 22:54:33.986 | INFO     | voice_engine.recognizer:_check_and_download_model:51 - Local file not found. Downloading...
+2025-10-07 22:54:33.986 | INFO     | voice_engine.utils:download_and_extract:85 - 🏃‍♂️Downloading https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2 to F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2...
+2025-10-07 22:54:56.411 | INFO     | voice_engine.utils:download_and_extract:106 - Downloaded sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2 successfully.
+2025-10-07 22:54:56.411 | INFO     | voice_engine.utils:download_and_extract:110 - Extracting sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2...
+2025-10-07 22:55:07.613 | INFO     | voice_engine.utils:download_and_extract:113 - Extraction completed.
+2025-10-07 22:56:06.119 | INFO     | __main__:main:111 - Configuration loaded.
+2025-10-07 22:56:06.120 | WARNING  | voice_engine.recognizer:__init__:26 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-07 22:56:06.120 | INFO     | voice_engine.recognizer:__init__:31 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-07 22:56:06.120 | WARNING  | voice_engine.recognizer:_check_and_download_model:45 - Streaming Zipformer model not found in F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Downloading the model...
+2025-10-07 22:56:06.120 | WARNING  | voice_engine.utils:check_and_extract_local_file:160 - Extracted directory F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17 exists but is missing some expected files. Forcing re-download.
+2025-10-07 22:56:06.133 | WARNING  | voice_engine.utils:check_and_extract_local_file:180 - Local file not found or not a tar.bz2 archive: F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2
+2025-10-07 22:56:06.134 | INFO     | voice_engine.recognizer:_check_and_download_model:51 - Local file not found. Downloading...
+2025-10-07 22:57:42.076 | INFO     | __main__:main:111 - Configuration loaded.
+2025-10-07 22:57:42.076 | WARNING  | voice_engine.recognizer:__init__:26 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-07 22:57:42.076 | INFO     | voice_engine.recognizer:__init__:31 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-07 22:57:42.077 | WARNING  | voice_engine.recognizer:_check_and_download_model:45 - Streaming Zipformer model not found in F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Downloading the model...
+2025-10-07 22:57:42.077 | WARNING  | voice_engine.utils:check_and_extract_local_file:180 - Local file not found or not a tar.bz2 archive: F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2
+2025-10-07 22:57:42.077 | INFO     | voice_engine.recognizer:_check_and_download_model:51 - Local file not found. Downloading...
+2025-10-07 22:59:49.717 | INFO     | __main__:main:111 - Configuration loaded.
+2025-10-07 22:59:49.717 | WARNING  | voice_engine.recognizer:__init__:26 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-07 22:59:49.717 | INFO     | voice_engine.recognizer:__init__:31 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-07 22:59:49.717 | WARNING  | voice_engine.recognizer:_check_and_download_model:45 - Streaming Zipformer model not found in F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Downloading the model...
+2025-10-07 22:59:49.718 | WARNING  | voice_engine.utils:check_and_extract_local_file:184 - Local file not found or not a tar.bz2 archive: F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2
+2025-10-07 22:59:49.718 | INFO     | voice_engine.recognizer:_check_and_download_model:51 - Local file not found. Downloading...
