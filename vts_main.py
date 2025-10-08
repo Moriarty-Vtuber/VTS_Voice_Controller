@@ -117,9 +117,42 @@ async def main():
     expression_map = config['expressions']
 
     # 2. Initialize ASR Engine
-    absolute_model_dir = os.path.join(BASE_PATH, "models", "sherpa-onnx-streaming-zipformer-en-20M-2023-02-17")
+    from voice_engine.utils import ensure_model_downloaded_and_extracted
+    model_config = {
+        "english": {
+            "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2",
+            "tokens": "tokens.txt",
+            "encoder": "encoder-epoch-99-avg-1.int8.onnx",
+            "decoder": "decoder-epoch-99-avg-1.int8.onnx",
+            "joiner": "joiner-epoch-99-avg-1.int8.onnx",
+        }
+    }
+    language = "english"  # Default language
+    selected_model = model_config.get(language.lower())
+    if not selected_model:
+        logger.error(f"Language '{language}' not supported. Please check the model_config.")
+        return
+
+    model_url = selected_model["url"]
+    model_name = model_url.split("/")[-1].replace(".tar.bz2", "")
+    
+    model_base_dir = os.path.join(BASE_PATH, "models")
+    
+
+
+    # Ensure model is downloaded and extracted
+    actual_model_dir = ensure_model_downloaded_and_extracted(model_url, model_base_dir)
+
+    tokens_path = os.path.join(actual_model_dir, selected_model["tokens"])
+    encoder_path = os.path.join(actual_model_dir, selected_model["encoder"])
+    decoder_path = os.path.join(actual_model_dir, selected_model["decoder"])
+    joiner_path = os.path.join(actual_model_dir, selected_model["joiner"])
+
     asr_engine = VoiceRecognition(
-        model_dir=absolute_model_dir,
+        tokens_path=tokens_path,
+        encoder_path=encoder_path,
+        decoder_path=decoder_path,
+        joiner_path=joiner_path,
         debug=False,
         decoding_method="modified_beam_search",
         provider="cuda",
@@ -191,7 +224,7 @@ async def main():
     except Exception as e:
         logger.error(f"Failed to auto-update expressions: {e}")
 
-    # 5. Start listening to the microphone
+    # 5. Start listening to the. microphone
     logger.info("Starting microphone stream...")
     
     loop = asyncio.get_running_loop()
@@ -200,19 +233,35 @@ async def main():
         """A synchronous callback that schedules the async audio processing on the main event loop."""
         asyncio.run_coroutine_threadsafe(audio_callback(indata, frames, time, status), loop)
 
+    async def process_audio_buffer_periodically():
+        global audio_buffer
+        while True:
+            await asyncio.sleep(0.5)  # Process buffer every 0.5 seconds
+            async with buffer_lock:
+                if audio_buffer.size > 0:
+                    logger.debug(f"Type of asr_engine: {type(asr_engine)}")
+                    # Process the audio buffer
+                    transcribed_text = asr_engine.transcribe_np(audio_buffer)
+                    logger.debug(f"Transcribed text (type: {type(transcribed_text)}): {transcribed_text}")
+                    await asr_callback(transcribed_text)
+                    audio_buffer = np.array([], dtype=np.float32)  # Clear the buffer
+
+    # Start the periodic audio processing task
+    audio_processing_task = asyncio.create_task(process_audio_buffer_periodically())
+
     try:
         # Set blocksize to a fraction of the sample rate for lower latency
         blocksize = int(16000 * 0.2) # 200ms chunks
         with sd.InputStream(callback=sync_audio_callback,
                              channels=1, dtype='float32', samplerate=16000, blocksize=blocksize):
             logger.info("Microphone stream started. Say something!")
-            while True:
-                await asyncio.sleep(1)
+            await audio_processing_task  # Keep the main task alive until audio_processing_task finishes
     except KeyboardInterrupt:
         logger.info("Stopping...")
     except Exception as e:
         logger.error(f"An error occurred during audio streaming: {e}")
     finally:
+        audio_processing_task.cancel()  # Cancel the periodic task
         if vts_client:
             await vts_client.disconnect()
 

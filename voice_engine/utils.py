@@ -58,6 +58,26 @@ def ensure_model_downloaded_and_extracted(url: str, output_dir: str) -> Path:
     file_name = url.split("/")[-1]
     compressed_file_path = Path(output_dir) / file_name
 
+    model_name = file_name.replace(".tar.bz2", "")
+    extracted_dir_path = Path(output_dir) / model_name # This is the top-level extracted dir
+
+    # Determine the potential final model directory (could be nested)
+    potential_final_model_dir = extracted_dir_path
+    if extracted_dir_path.exists():
+        extracted_items = os.listdir(extracted_dir_path)
+        if len(extracted_items) == 1 and os.path.isdir(os.path.join(extracted_dir_path, extracted_items[0])):
+            potential_final_model_dir = Path(extracted_dir_path) / extracted_items[0]
+
+    expected_files = ["encoder-epoch-99-avg-1.int8.onnx", "decoder-epoch-99-avg-1.int8.onnx", "joiner-epoch-99-avg-1.int8.onnx", "tokens.txt"]
+    all_files_exist = all(os.path.isfile(os.path.join(potential_final_model_dir, f)) for f in expected_files)
+
+    if potential_final_model_dir.exists() and all_files_exist:
+        logger.info(f"✅ Model already extracted and complete at {potential_final_model_dir}. Skipping download/extraction.")
+        return potential_final_model_dir
+    elif extracted_dir_path.exists(): # If top-level exists but files are missing/incomplete, clean up
+        logger.warning(f"Extracted directory {extracted_dir_path} exists but is missing some expected files or is incomplete. Re-extracting.")
+        shutil.rmtree(extracted_dir_path) # Clean up incomplete directory
+
     # 1. Ensure the compressed file is downloaded
     if not compressed_file_path.exists():
         disable_tqdm = getattr(sys, 'frozen', False)
@@ -85,40 +105,25 @@ def ensure_model_downloaded_and_extracted(url: str, output_dir: str) -> Path:
     else:
         logger.info(f"Compressed file {file_name} already exists. Skipping download.")
 
-    # 2. Determine the actual extracted directory path and check its contents
-    extracted_dir_path = None
-    if not compressed_file_path.exists():
-        raise FileNotFoundError(f"Compressed file not found after download attempt: {compressed_file_path}")
-
-    with tarfile.open(compressed_file_path, "r:bz2") as tar:
-        for member in tar.getmembers():
-            if member.isdir():
-                extracted_dir_path = Path(output_dir) / member.name.split(os.sep)[0]
-                break
-        if extracted_dir_path is None:
-            extracted_dir_path = Path(output_dir) / file_name.replace(".tar.bz2", "")
-
-    expected_files = ["encoder.onnx", "decoder.onnx", "joiner.onnx", "tokens.txt"]
-    all_files_exist = all(os.path.isfile(os.path.join(extracted_dir_path, f)) for f in expected_files)
-
-    if extracted_dir_path.exists() and all_files_exist:
-        logger.info(f"✅ Extracted directory {extracted_dir_path} exists and contains all expected files. No extraction needed.")
-        return extracted_dir_path
-    elif extracted_dir_path.exists() and not all_files_exist:
-        logger.warning(f"Extracted directory {extracted_dir_path} exists but is missing some expected files. Re-extracting.")
-        shutil.rmtree(extracted_dir_path) # Clean up incomplete directory
-
     # 3. Extract the archive
-    logger.info(f"Extracting {file_name} to {output_dir}...")
+    logger.info(f"Extracting {file_name} to {extracted_dir_path}...")
+    extracted_dir_path.mkdir(parents=True, exist_ok=True)
     with tarfile.open(compressed_file_path, "r:bz2") as tar:
-        tar.extractall(path=output_dir)
+        tar.extractall(path=extracted_dir_path)
     logger.info("Extraction completed.")
 
-    # 4. Delete the compressed file
+    # 4. Determine final model directory after extraction (handling nested)
+    final_model_dir_after_extraction = extracted_dir_path
+    extracted_items = os.listdir(extracted_dir_path)
+    if len(extracted_items) == 1 and os.path.isdir(os.path.join(extracted_dir_path, extracted_items[0])):
+        final_model_dir_after_extraction = Path(extracted_dir_path) / extracted_items[0]
+        logger.info(f"Found nested directory after extraction: {final_model_dir_after_extraction}.")
+
+    # 5. Delete the compressed file
     os.remove(compressed_file_path)
     logger.debug(f"Deleted the compressed file: {file_name}")
 
-    return extracted_dir_path
+    return final_model_dir_after_extraction
 
 
 # Remove the old download_and_extract and check_and_extract_local_file functions

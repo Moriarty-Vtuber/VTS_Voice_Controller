@@ -1,5 +1,8 @@
 @echo off
 
+echo "--- Switching to feature/zip-former branch ---"
+git checkout feature/zip-former
+
 echo "--- Activating virtual environment ---"
 call .\.venv\Scripts\activate.bat
 
