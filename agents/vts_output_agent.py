@@ -1,21 +1,24 @@
+
 import asyncio
-import os
 from loguru import logger
 import pyvts
+from core.interfaces import VTSOutputAgent
+from core.event_bus import EventBus
 
-class VTSClient:
-    """Client to interact with the VTube Studio API."""
+class VTSWebSocketAgent(VTSOutputAgent):
+    """Agent to interact with the VTube Studio API via WebSocket."""
 
-    def __init__(self, host: str, port: int, token_file: str):
+    def __init__(self, host: str, port: int, token_file: str, event_bus: EventBus):
         self.host = host
         self.port = port
         self.token_file = token_file
+        self.event_bus = event_bus
         self.vts = pyvts.vts(plugin_info={
             "plugin_name": "VTS Voice Controller",
             "developer": "Gemini",
             "authentication_token_path": self.token_file,
         })
-        self.request_lock = asyncio.Lock() # New: Initialize a lock for serializing requests
+        self.request_lock = asyncio.Lock()  # For serializing sensitive requests
 
     async def connect(self):
         """Connect to VTube Studio."""
@@ -27,9 +30,9 @@ class VTSClient:
             raise
 
     async def authenticate(self):
-        """Authenticate with VTube Studio using the pyvts library's methods."""
+        """Authenticate with VTube Studio."""
         try:
-            async with self.request_lock: # New: Use lock for authentication request
+            async with self.request_lock:
                 await self.vts.request_authenticate_token()
                 authenticated = await self.vts.request_authenticate()
             if authenticated:
@@ -40,20 +43,30 @@ class VTSClient:
             logger.error(f"Authentication error: {e}")
             raise
 
-    async def trigger_expression(self, hotkey_id: str):
-        """Trigger an expression in VTube Studio using its hotkey ID."""
+    async def trigger_hotkey(self, hotkey_id: str):
+        """Trigger a hotkey in VTube Studio."""
         request = self.vts.vts_request.requestTriggerHotKey(hotkey_id)
         try:
-            async with self.request_lock: # New: Use lock for trigger request
-                response = await self.vts.request(request)
-            # Check if the hotkeyID is present in the response data, indicating success
+            # No lock here for expression triggers to allow concurrent requests
+            response = await self.vts.request(request)
             if "hotkeyID" in response.get("data", {}):
-                 logger.info(f"Triggered expression: {hotkey_id}")
+                logger.info(f"Triggered hotkey: {hotkey_id}")
             else:
-                 # If hotkeyID is not in data, it might be an error or unexpected response
-                 logger.warning(f"Failed to trigger expression {hotkey_id}. Response: {response}")
+                logger.warning(f"Failed to trigger hotkey {hotkey_id}. Response: {response}")
         except Exception as e:
-            logger.error(f"Failed to trigger expression '{hotkey_id}': {e}")
+            logger.error(f"Failed to trigger hotkey '{hotkey_id}': {e}")
+
+    async def get_hotkey_list(self):
+        """Get a list of all hotkeys for the current model."""
+        logger.info("Requesting hotkey list from VTube Studio...")
+        request = self.vts.vts_request.requestHotKeyList()
+        try:
+            async with self.request_lock:  # Lock for this request
+                response = await self.vts.request(request)
+            return response
+        except Exception as e:
+            logger.error(f"Failed to get hotkey list: {e}")
+            raise
 
     async def disconnect(self):
         """Disconnect from VTube Studio."""
@@ -61,14 +74,10 @@ class VTSClient:
             await self.vts.close()
             logger.info("Disconnected from VTube Studio.")
 
-    async def get_hotkey_list(self):
-        """Get a list of all hotkeys for the current model."""
-        logger.info("Requesting hotkey list from VTube Studio...")
-        request = self.vts.vts_request.requestHotKeyList()
-        try:
-            async with self.request_lock: # New: Use lock for hotkey list request
-                response = await self.vts.request(request)
-            return response
-        except Exception as e:
-            logger.error(f"Failed to get hotkey list: {e}")
-            raise
+    async def run(self):
+        """Listen for hotkey trigger events on the event bus."""
+        trigger_queue = await self.event_bus.subscribe("hotkey_triggered")
+        while True:
+            event = await trigger_queue.get()
+            await self.trigger_hotkey(event.payload)
+            trigger_queue.task_done()

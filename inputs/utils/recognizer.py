@@ -59,22 +59,14 @@ class VoiceRecognition:
         while self.recognizer.is_ready(self.stream):
             self.recognizer.decode_stream(self.stream)
         
-        logger.debug(f"Recognizer class: {type(self.recognizer)}")
-        result_obj = self.recognizer.get_result(self.stream)
-        logger.debug(f"Result object from get_result (type: {type(result_obj)}): {result_obj}")
-        if isinstance(result_obj, str):
-            current_text = result_obj
-        else:
-            current_text = result_obj.text
-        
         text_to_return = ""
-        if current_text and current_text != self.last_text:
-            text_to_return = current_text[len(self.last_text):].strip()
-            self.last_text = current_text
-
         if self.recognizer.is_endpoint(self.stream):
+            result = self.recognizer.get_result(self.stream)
+            if isinstance(result, str):
+                text_to_return = result.strip()
+            else:
+                text_to_return = result.text.strip()
             self.recognizer.reset(self.stream)
-            self.last_text = ""
 
         return text_to_return
 

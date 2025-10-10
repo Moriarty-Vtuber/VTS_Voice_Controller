@@ -1,0 +1,107 @@
+2025-10-10 12:52:37.061 | INFO     | agents.vts_output_agent:connect:27 - Connected to VTube Studio.
+2025-10-10 12:52:37.116 | INFO     | agents.vts_output_agent:authenticate:39 - Authenticated successfully with VTube Studio.
+2025-10-10 12:52:37.116 | INFO     | core.application_core:_synchronize_expressions:109 - Checking for expression updates from VTube Studio...
+2025-10-10 12:52:37.116 | INFO     | agents.vts_output_agent:get_hotkey_list:61 - Requesting hotkey list from VTube Studio...
+2025-10-10 12:52:37.144 | INFO     | core.application_core:_synchronize_expressions:137 - Successfully updated 'vts_config.yaml' with the latest expressions.
+2025-10-10 12:52:37.144 | INFO     | core.application_core:_synchronize_expressions:151 - Expression map created. Ready to detect keywords.
+2025-10-10 12:52:37.145 | INFO     | inputs.utils.utils:ensure_model_downloaded_and_extracted:75 - ✅ Model already extracted and complete at F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Skipping download/extraction.
+2025-10-10 12:52:37.145 | WARNING  | inputs.asr_processor:__init__:38 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-10 12:52:37.145 | INFO     | inputs.asr_processor:__init__:43 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-10 12:52:39.908 | INFO     | core.application_core:run:164 - Starting application components...
+2025-10-10 12:52:39.908 | INFO     | inputs.asr_processor:process_input:88 - Starting microphone stream...
+2025-10-10 12:52:39.937 | INFO     | inputs.asr_processor:process_input:110 - Microphone stream started. Say something!
+2025-10-10 12:52:44.938 | WARNING  | core.application_core:simulate_voice_command:168 - --- SIMULATING VOICE COMMAND ---
+2025-10-10 12:52:44.938 | WARNING  | core.application_core:simulate_voice_command:170 - --- SIMULATION SENT ---
+2025-10-10 12:52:44.938 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: test expression
+2025-10-10 12:53:44.547 | INFO     | agents.vts_output_agent:connect:27 - Connected to VTube Studio.
+2025-10-10 12:53:44.559 | INFO     | agents.vts_output_agent:authenticate:39 - Authenticated successfully with VTube Studio.
+2025-10-10 12:53:44.560 | INFO     | core.application_core:_synchronize_expressions:109 - Checking for expression updates from VTube Studio...
+2025-10-10 12:53:44.560 | INFO     | agents.vts_output_agent:get_hotkey_list:61 - Requesting hotkey list from VTube Studio...
+2025-10-10 12:53:44.572 | INFO     | core.application_core:_synchronize_expressions:151 - Expression map created. Ready to detect keywords.
+2025-10-10 12:53:44.573 | INFO     | inputs.utils.utils:ensure_model_downloaded_and_extracted:75 - ✅ Model already extracted and complete at F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Skipping download/extraction.
+2025-10-10 12:53:44.573 | WARNING  | inputs.asr_processor:__init__:38 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-10 12:53:44.573 | INFO     | inputs.asr_processor:__init__:43 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-10 12:53:47.082 | INFO     | core.application_core:run:164 - Starting application components...
+2025-10-10 12:53:47.082 | INFO     | inputs.asr_processor:process_input:88 - Starting microphone stream...
+2025-10-10 12:53:47.108 | INFO     | inputs.asr_processor:process_input:110 - Microphone stream started. Say something!
+2025-10-10 12:53:52.111 | WARNING  | core.application_core:simulate_voice_command:168 - --- SIMULATING VOICE COMMAND ---
+2025-10-10 12:53:52.111 | WARNING  | core.application_core:simulate_voice_command:170 - --- SIMULATION SENT ---
+2025-10-10 12:53:52.111 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: test expression
+2025-10-10 12:54:01.127 | INFO     | agents.vts_output_agent:disconnect:75 - Disconnected from VTube Studio.
+2025-10-10 12:54:01.128 | INFO     | __main__:<module>:22 - Program terminated by user.
+2025-10-10 12:54:04.895 | INFO     | agents.vts_output_agent:connect:27 - Connected to VTube Studio.
+2025-10-10 12:54:04.911 | INFO     | agents.vts_output_agent:authenticate:39 - Authenticated successfully with VTube Studio.
+2025-10-10 12:54:04.911 | INFO     | core.application_core:_synchronize_expressions:109 - Checking for expression updates from VTube Studio...
+2025-10-10 12:54:04.911 | INFO     | agents.vts_output_agent:get_hotkey_list:61 - Requesting hotkey list from VTube Studio...
+2025-10-10 12:54:04.924 | INFO     | core.application_core:_synchronize_expressions:151 - Expression map created. Ready to detect keywords.
+2025-10-10 12:54:04.925 | INFO     | inputs.utils.utils:ensure_model_downloaded_and_extracted:75 - ✅ Model already extracted and complete at F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Skipping download/extraction.
+2025-10-10 12:54:04.925 | WARNING  | inputs.asr_processor:__init__:38 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-10 12:54:04.925 | INFO     | inputs.asr_processor:__init__:43 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-10 12:54:07.392 | INFO     | core.application_core:run:164 - Starting application components...
+2025-10-10 12:54:07.393 | INFO     | inputs.asr_processor:process_input:88 - Starting microphone stream...
+2025-10-10 12:54:07.419 | INFO     | inputs.asr_processor:process_input:110 - Microphone stream started. Say something!
+2025-10-10 12:54:11.691 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: U
+2025-10-10 12:54:12.423 | WARNING  | core.application_core:simulate_voice_command:168 - --- SIMULATING VOICE COMMAND ---
+2025-10-10 12:54:12.423 | WARNING  | core.application_core:simulate_voice_command:170 - --- SIMULATION SENT ---
+2025-10-10 12:54:12.423 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: test expression
+2025-10-10 12:54:13.745 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: DEAD
+2025-10-10 12:54:15.370 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: D HEADED EH
+2025-10-10 12:54:19.060 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: THAT A
+2025-10-10 12:54:23.280 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: DEAD
+2025-10-10 12:54:25.869 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: THAT I DARTED OUT IDAH YER DAD ER DER HED A NOT I
+2025-10-10 12:54:28.044 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: NO
+2025-10-10 12:54:29.538 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: RED AT
+2025-10-10 12:54:29.836 | INFO     | agents.vts_output_agent:disconnect:75 - Disconnected from VTube Studio.
+2025-10-10 12:54:29.837 | INFO     | __main__:<module>:22 - Program terminated by user.
+2025-10-10 12:55:43.549 | INFO     | agents.vts_output_agent:connect:27 - Connected to VTube Studio.
+2025-10-10 12:55:43.569 | INFO     | agents.vts_output_agent:authenticate:39 - Authenticated successfully with VTube Studio.
+2025-10-10 12:55:43.569 | INFO     | core.application_core:_synchronize_expressions:109 - Checking for expression updates from VTube Studio...
+2025-10-10 12:55:43.569 | INFO     | agents.vts_output_agent:get_hotkey_list:61 - Requesting hotkey list from VTube Studio...
+2025-10-10 12:55:43.582 | INFO     | core.application_core:_synchronize_expressions:151 - Expression map created. Ready to detect keywords.
+2025-10-10 12:55:43.583 | INFO     | inputs.utils.utils:ensure_model_downloaded_and_extracted:75 - ✅ Model already extracted and complete at F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Skipping download/extraction.
+2025-10-10 12:55:43.583 | WARNING  | inputs.asr_processor:__init__:38 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-10 12:55:43.583 | INFO     | inputs.asr_processor:__init__:43 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-10 12:55:46.193 | INFO     | core.application_core:run:164 - Starting application components...
+2025-10-10 12:55:46.194 | INFO     | inputs.asr_processor:process_input:88 - Starting microphone stream...
+2025-10-10 12:55:46.219 | INFO     | inputs.asr_processor:process_input:110 - Microphone stream started. Say something!
+2025-10-10 12:55:51.220 | WARNING  | core.application_core:simulate_and_shutdown:168 - --- SIMULATING VOICE COMMAND ---
+2025-10-10 12:55:51.220 | WARNING  | core.application_core:simulate_and_shutdown:170 - --- SIMULATION SENT ---
+2025-10-10 12:55:51.220 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: test expression
+2025-10-10 12:55:53.224 | WARNING  | core.application_core:simulate_and_shutdown:172 - --- SHUTTING DOWN APPLICATION ---
+2025-10-10 12:55:53.244 | INFO     | agents.vts_output_agent:disconnect:75 - Disconnected from VTube Studio.
+2025-10-10 12:56:56.816 | INFO     | agents.vts_output_agent:connect:27 - Connected to VTube Studio.
+2025-10-10 12:56:56.823 | INFO     | agents.vts_output_agent:authenticate:39 - Authenticated successfully with VTube Studio.
+2025-10-10 12:56:56.823 | INFO     | core.application_core:_synchronize_expressions:109 - Checking for expression updates from VTube Studio...
+2025-10-10 12:56:56.823 | INFO     | agents.vts_output_agent:get_hotkey_list:61 - Requesting hotkey list from VTube Studio...
+2025-10-10 12:56:56.836 | INFO     | core.application_core:_synchronize_expressions:151 - Expression map created. Ready to detect keywords.
+2025-10-10 12:56:56.837 | INFO     | inputs.utils.utils:ensure_model_downloaded_and_extracted:75 - ✅ Model already extracted and complete at F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Skipping download/extraction.
+2025-10-10 12:56:56.837 | WARNING  | inputs.asr_processor:__init__:38 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-10 12:56:56.837 | INFO     | inputs.asr_processor:__init__:43 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-10 12:56:59.325 | INFO     | core.application_core:run:164 - Starting application components...
+2025-10-10 12:56:59.325 | INFO     | inputs.asr_processor:process_input:88 - Starting microphone stream...
+2025-10-10 12:56:59.350 | INFO     | inputs.asr_processor:process_input:110 - Microphone stream started. Say something!
+2025-10-10 12:57:04.352 | WARNING  | core.application_core:simulate_and_shutdown:168 - --- SIMULATING VOICE COMMAND ---
+2025-10-10 12:57:04.352 | WARNING  | core.application_core:simulate_and_shutdown:170 - --- SIMULATION SENT ---
+2025-10-10 12:57:04.352 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: I am so angry
+2025-10-10 12:57:04.352 | INFO     | core.intent_resolver:_process_one_event:42 - Keyword 'Angry' detected. Triggering expression: 937bc0c1af794cdca15ded0c34981894
+2025-10-10 12:57:04.402 | INFO     | agents.vts_output_agent:trigger_hotkey:53 - Triggered hotkey: 937bc0c1af794cdca15ded0c34981894
+2025-10-10 12:57:06.354 | WARNING  | core.application_core:simulate_and_shutdown:172 - --- SHUTTING DOWN APPLICATION ---
+2025-10-10 12:57:06.569 | INFO     | agents.vts_output_agent:disconnect:75 - Disconnected from VTube Studio.
+2025-10-10 12:58:01.672 | INFO     | agents.vts_output_agent:connect:27 - Connected to VTube Studio.
+2025-10-10 12:58:01.687 | INFO     | agents.vts_output_agent:authenticate:39 - Authenticated successfully with VTube Studio.
+2025-10-10 12:58:01.688 | INFO     | core.application_core:_synchronize_expressions:109 - Checking for expression updates from VTube Studio...
+2025-10-10 12:58:01.688 | INFO     | agents.vts_output_agent:get_hotkey_list:61 - Requesting hotkey list from VTube Studio...
+2025-10-10 12:58:01.700 | INFO     | core.application_core:_synchronize_expressions:151 - Expression map created. Ready to detect keywords.
+2025-10-10 12:58:01.701 | INFO     | inputs.utils.utils:ensure_model_downloaded_and_extracted:75 - ✅ Model already extracted and complete at F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Skipping download/extraction.
+2025-10-10 12:58:01.701 | WARNING  | inputs.asr_processor:__init__:38 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-10 12:58:01.701 | INFO     | inputs.asr_processor:__init__:43 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-10 12:58:04.185 | INFO     | core.application_core:run:164 - Starting application components...
+2025-10-10 12:58:04.185 | INFO     | inputs.asr_processor:process_input:88 - Starting microphone stream...
+2025-10-10 12:58:04.210 | INFO     | inputs.asr_processor:process_input:110 - Microphone stream started. Say something!
+2025-10-10 12:58:09.213 | WARNING  | core.application_core:simulate_and_shutdown:168 - --- SIMULATING VOICE COMMAND ---
+2025-10-10 12:58:09.213 | WARNING  | core.application_core:simulate_and_shutdown:170 - --- SIMULATION SENT ---
+2025-10-10 12:58:09.213 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: I am so angry
+2025-10-10 12:58:09.213 | INFO     | core.intent_resolver:_process_one_event:42 - Keyword 'Angry' detected. Triggering expression: 937bc0c1af794cdca15ded0c34981894
+2025-10-10 12:58:09.236 | INFO     | agents.vts_output_agent:trigger_hotkey:53 - Triggered hotkey: 937bc0c1af794cdca15ded0c34981894
+2025-10-10 12:58:11.218 | WARNING  | core.application_core:simulate_and_shutdown:172 - --- SHUTTING DOWN APPLICATION ---
+2025-10-10 12:58:11.433 | INFO     | agents.vts_output_agent:disconnect:75 - Disconnected from VTube Studio.

@@ -12,3 +12,11 @@ models/
 
 # Gemini CLI files
 .gemini/
+
+# Build artifacts
+*.zip
+*.exe
+
+# Plan files
+plan.txt
+step.txt
