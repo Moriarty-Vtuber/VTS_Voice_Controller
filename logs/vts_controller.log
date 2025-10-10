@@ -213,3 +213,21 @@
 2025-10-10 18:33:10.501 | WARNING  | core.application_core:test_shutdown_manager:174 - --- TEST COMPLETE: SHUTTING DOWN APPLICATION ---
 2025-10-10 18:33:10.502 | INFO     | core.application_core:run:182 - Application tasks were cancelled.
 2025-10-10 18:33:10.503 | INFO     | agents.vts_output_agent:disconnect:83 - Disconnected from VTube Studio.
+2025-10-10 18:40:45.473 | INFO     | agents.vts_output_agent:connect:28 - Connected to VTube Studio.
+2025-10-10 18:40:45.483 | INFO     | agents.vts_output_agent:authenticate:47 - Authenticated successfully with VTube Studio.
+2025-10-10 18:40:45.483 | INFO     | core.application_core:_synchronize_expressions:96 - Checking for expression updates from VTube Studio...
+2025-10-10 18:40:45.483 | INFO     | agents.vts_output_agent:get_hotkey_list:69 - Requesting hotkey list from VTube Studio...
+2025-10-10 18:40:45.495 | INFO     | core.application_core:_synchronize_expressions:147 - Expression map created. Ready to detect keywords.
+2025-10-10 18:40:45.496 | WARNING  | core.application_core:_initialize_components:91 - ASR/Microphone input is currently disabled due to system-level dependency issues.
+2025-10-10 18:40:45.496 | WARNING  | core.application_core:_initialize_components:92 - To run with microphone, the onnxruntime issue must be resolved first.
+2025-10-10 18:40:45.496 | INFO     | core.application_core:run:160 - Starting application components...
+2025-10-10 18:42:07.243 | INFO     | agents.vts_output_agent:connect:28 - Connected to VTube Studio.
+2025-10-10 18:42:07.255 | INFO     | agents.vts_output_agent:authenticate:47 - Authenticated successfully with VTube Studio.
+2025-10-10 18:42:07.255 | INFO     | core.application_core:_synchronize_expressions:96 - Checking for expression updates from VTube Studio...
+2025-10-10 18:42:07.255 | INFO     | agents.vts_output_agent:get_hotkey_list:69 - Requesting hotkey list from VTube Studio...
+2025-10-10 18:42:07.268 | INFO     | core.application_core:_synchronize_expressions:147 - Expression map created. Ready to detect keywords.
+2025-10-10 18:42:07.268 | WARNING  | core.application_core:_initialize_components:91 - ASR/Microphone input is currently disabled due to system-level dependency issues.
+2025-10-10 18:42:07.268 | WARNING  | core.application_core:_initialize_components:92 - To run with microphone, the onnxruntime issue must be resolved first.
+2025-10-10 18:42:07.268 | ERROR    | core.application_core:run:162 - No input processor available. The application will now exit.
+2025-10-10 18:42:07.268 | ERROR    | core.application_core:run:163 - Run with the --test flag for testing, or resolve the onnxruntime issue to enable microphone input.
+2025-10-10 18:42:07.269 | INFO     | agents.vts_output_agent:disconnect:83 - Disconnected from VTube Studio.

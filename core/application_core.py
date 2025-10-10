@@ -157,15 +157,20 @@ class ApplicationCore:
             logger.error("Application cannot start due to initialization failure.")
             return
 
+        # If no input processor is available (i.e., not in test mode and ASR is disabled), exit gracefully.
+        if not self.input_processor:
+            logger.error("No input processor available. The application will now exit.")
+            logger.error("Run with the --test flag for testing, or resolve the onnxruntime issue to enable microphone input.")
+            await self.vts_agent.disconnect()
+            return
+
         logger.info("Starting application components...")
         
         tasks = [
             asyncio.create_task(self.intent_resolver.resolve_intent()),
             asyncio.create_task(self.vts_agent.run()),
+            asyncio.create_task(self.input_processor.process_input()),
         ]
-
-        if self.input_processor:
-            tasks.append(asyncio.create_task(self.input_processor.process_input()))
 
         # If in test mode, we need a way to stop the application
         if self.test_mode:
