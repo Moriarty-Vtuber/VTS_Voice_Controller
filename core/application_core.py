@@ -13,7 +13,10 @@ from inputs.asr_processor import ASRProcessor
 from inputs.utils.utils import ensure_model_downloaded_and_extracted
 
 class ApplicationCore:
-    def __init__(self, config_path: str, test_mode: bool = False):
+    def __init__(self, config_path: str, test_mode: bool = False, recognition_mode: str = "fast"):
+        self.config_path = config_path
+        self.test_mode = test_mode
+        self.recognition_mode = recognition_mode
         self.config_path = config_path
         self.test_mode = test_mode
         self.event_bus = EventBus()
@@ -120,6 +123,7 @@ class ApplicationCore:
                 decoder_path=os.path.join(actual_model_dir, selected_model["decoder"]),
                 joiner_path=os.path.join(actual_model_dir, selected_model["joiner"]),
                 provider="cpu", # Defaulting to CPU for broader compatibility
+                recognition_mode=self.recognition_mode,
             )
 
     async def _synchronize_expressions(self):

@@ -23,6 +23,7 @@ class ASRProcessor(InputProcessor):
         provider: str = "cpu",
         vad_aggressiveness: int = 3, # 0 (least aggressive) to 3 (most aggressive)
         vad_frame_duration_ms: int = 30, # 10, 20, or 30
+        recognition_mode: str = "fast", # "fast" or "accurate"
     ) -> None:
         self.event_bus = event_bus
         self.tokens_path = tokens_path
@@ -33,6 +34,7 @@ class ASRProcessor(InputProcessor):
         self.debug = debug
         self.SAMPLE_RATE = sample_rate
         self.provider = provider
+        self.recognition_mode = recognition_mode
 
         if self.provider == "cuda":
             try:
@@ -76,20 +78,30 @@ class ASRProcessor(InputProcessor):
         self.stream.accept_waveform(self.SAMPLE_RATE, audio)
         while self.recognizer.is_ready(self.stream):
             self.recognizer.decode_stream(self.stream)
+
+        if self.recognition_mode == "fast":
+            result = self.recognizer.get_result(self.stream)
+            text = result.text.strip() if hasattr(result, 'text') else result.strip()
+
+            text_to_return = ""
+            if text and text != self.last_text:
+                text_to_return = text
+                self.last_text = text
+
+            if self.recognizer.is_endpoint(self.stream):
+                self.recognizer.reset(self.stream)
+                self.last_text = ""
+            
+            return text_to_return
         
-        result = self.recognizer.get_result(self.stream)
-        text = result.text.strip() if hasattr(result, 'text') else result.strip()
-
-        text_to_return = ""
-        if text and text != self.last_text:
-            text_to_return = text
-            self.last_text = text
-
-        if self.recognizer.is_endpoint(self.stream):
-            self.recognizer.reset(self.stream)
-            self.last_text = ""
-
-        return text_to_return
+        else: # Accurate mode
+            text_to_return = ""
+            if self.recognizer.is_endpoint(self.stream):
+                result = self.recognizer.get_result(self.stream)
+                text_to_return = result.text.strip() if hasattr(result, 'text') else result.strip()
+                self.recognizer.reset(self.stream)
+            
+            return text_to_return
 
     async def _audio_callback(self, indata, frames, time, status):
         if status:
