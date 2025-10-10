@@ -37,7 +37,11 @@ class ApplicationCore:
                     'token_file': os.path.join(base_path, 'vts_token.txt')
                 },
                 'expressions': {
-                    'hello': 'DefaultExpression.exp3.json'
+                    'DefaultExpression.exp3.json': {
+                        'name': 'DefaultExpression',
+                        'keywords': ['hello'],
+                        'cooldown_s': 60
+                    }
                 }
             }
             try:
@@ -113,40 +117,49 @@ class ApplicationCore:
                 vts_expressions = [h for h in hotkey_list_response['data']['availableHotkeys'] if h.get('type') == 'ToggleExpression']
 
                 yaml_expressions = self.config.get('expressions', {})
-                reverse_yaml_map = {v: k for k, v in yaml_expressions.items()}
                 new_yaml_expressions = {}
                 updated = False
+
+                # Map VTS hotkey IDs to their file names for quick lookup
+                file_to_hotkey_id_map = {exp.get('file'): exp.get('hotkeyID') for exp in vts_expressions}
 
                 for exp in vts_expressions:
                     exp_file = exp.get('file')
                     exp_name = exp.get('name')
                     if not exp_file or not exp_name:
                         continue
-                    if exp_file in reverse_yaml_map:
-                        keyword = reverse_yaml_map[exp_file]
-                        new_yaml_expressions[keyword] = exp_file
-                    else:
+
+                    if exp_file in yaml_expressions: # Existing expression
+                        # Preserve existing keywords and cooldown_s
+                        new_yaml_expressions[exp_file] = yaml_expressions[exp_file]
+                    else: # New expression from VTS
                         placeholder_keyword = f"NEW_KEYWORD_{exp_name.replace(' ', '_')}"
-                        new_yaml_expressions[placeholder_keyword] = exp_file
+                        new_yaml_expressions[exp_file] = {
+                            'name': exp_name,
+                            'keywords': [placeholder_keyword],
+                            'cooldown_s': 60 # Default cooldown
+                        }
                         updated = True
 
-                if len(new_yaml_expressions) != len(yaml_expressions) or updated:
+                # Check for removed expressions (optional, but good practice)
+                if len(new_yaml_expressions) != len(yaml_expressions):
+                    updated = True
+
+                if updated:
                     self.config['expressions'] = new_yaml_expressions
                     with open(self.config_path, 'w') as f:
                         yaml.dump(self.config, f, default_flow_style=False, allow_unicode=True)
                     logger.info(f"Successfully updated '{self.config_path}' with the latest expressions.")
 
                 session_expression_map = {}
-                file_to_hotkey_id_map = {exp.get('file'): exp.get('hotkeyID') for exp in vts_expressions}
-
-                for keyword, file_name in new_yaml_expressions.items():
-                    if file_name in file_to_hotkey_id_map:
-                        hotkey_id = file_to_hotkey_id_map[file_name]
-                        session_expression_map[keyword] = hotkey_id
-
-                for exp in vts_expressions:
-                    if exp.get('name') and exp.get('hotkeyID'):
-                        session_expression_map[exp.get('name')] = exp.get('hotkeyID')
+                # Build the session_expression_map from the updated config
+                for exp_file, exp_data in new_yaml_expressions.items():
+                    hotkey_id = file_to_hotkey_id_map.get(exp_file)
+                    if hotkey_id:
+                        for keyword in exp_data.get('keywords', []):
+                            session_expression_map[keyword] = hotkey_id
+                        # Also add the VTS expression name as a keyword
+                        session_expression_map[exp_data['name']] = hotkey_id
                 
                 logger.info("Expression map created. Ready to detect keywords.")
                 return session_expression_map

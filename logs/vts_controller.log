@@ -141,3 +141,21 @@
 2025-10-10 13:00:39.662 | INFO     | agents.vts_output_agent:trigger_hotkey:53 - Triggered hotkey: 937bc0c1af794cdca15ded0c34981894
 2025-10-10 13:00:41.587 | WARNING  | core.application_core:simulate_and_shutdown:172 - --- SHUTTING DOWN APPLICATION ---
 2025-10-10 13:00:41.663 | INFO     | agents.vts_output_agent:disconnect:75 - Disconnected from VTube Studio.
+2025-10-10 13:01:37.936 | INFO     | agents.vts_output_agent:connect:27 - Connected to VTube Studio.
+2025-10-10 13:01:37.950 | INFO     | agents.vts_output_agent:authenticate:39 - Authenticated successfully with VTube Studio.
+2025-10-10 13:01:37.950 | INFO     | core.application_core:_synchronize_expressions:113 - Checking for expression updates from VTube Studio...
+2025-10-10 13:01:37.950 | INFO     | agents.vts_output_agent:get_hotkey_list:61 - Requesting hotkey list from VTube Studio...
+2025-10-10 13:01:37.963 | INFO     | core.application_core:_synchronize_expressions:164 - Expression map created. Ready to detect keywords.
+2025-10-10 13:01:37.964 | INFO     | inputs.utils.utils:ensure_model_downloaded_and_extracted:75 - ✅ Model already extracted and complete at F:\VTS_Voice_Controller\models\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17\sherpa-onnx-streaming-zipformer-en-20M-2023-02-17. Skipping download/extraction.
+2025-10-10 13:01:37.964 | WARNING  | inputs.asr_processor:__init__:41 - CUDA provider not available for ONNX. Falling back to CPU.
+2025-10-10 13:01:37.964 | INFO     | inputs.asr_processor:__init__:46 - Sherpa-Onnx-ASR: Using cpu for inference
+2025-10-10 13:01:40.468 | INFO     | core.application_core:run:177 - Starting application components...
+2025-10-10 13:01:40.468 | INFO     | inputs.asr_processor:process_input:114 - Starting microphone stream...
+2025-10-10 13:01:40.498 | INFO     | inputs.asr_processor:process_input:137 - Microphone stream started. Say something!
+2025-10-10 13:01:45.502 | WARNING  | core.application_core:simulate_and_shutdown:181 - --- SIMULATING VOICE COMMAND ---
+2025-10-10 13:01:45.502 | WARNING  | core.application_core:simulate_and_shutdown:183 - --- SIMULATION SENT ---
+2025-10-10 13:01:45.502 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: I am so angry
+2025-10-10 13:01:45.502 | INFO     | core.intent_resolver:_process_one_event:42 - Keyword 'angry' detected. Triggering expression: 937bc0c1af794cdca15ded0c34981894
+2025-10-10 13:01:45.583 | INFO     | agents.vts_output_agent:trigger_hotkey:53 - Triggered hotkey: 937bc0c1af794cdca15ded0c34981894
+2025-10-10 13:01:47.507 | WARNING  | core.application_core:simulate_and_shutdown:185 - --- SHUTTING DOWN APPLICATION ---
+2025-10-10 13:01:47.537 | INFO     | agents.vts_output_agent:disconnect:75 - Disconnected from VTube Studio.
