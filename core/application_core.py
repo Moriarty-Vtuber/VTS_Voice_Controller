@@ -8,14 +8,18 @@ import sys
 from core.event_bus import EventBus
 from agents.vts_output_agent import VTSWebSocketAgent
 from core.intent_resolver import KeywordIntentResolver
+from inputs.test_input_processor import TestInputProcessor
+# from inputs.asr_processor import ASRProcessor # Placeholder for when it's restored
 
 class ApplicationCore:
-    def __init__(self, config_path: str):
+    def __init__(self, config_path: str, test_mode: bool = False):
         self.config_path = config_path
+        self.test_mode = test_mode
         self.event_bus = EventBus()
         self.config = self._load_config()
         self.vts_agent = None
         self.intent_resolver = None
+        self.input_processor = None
 
     def _load_config(self):
         if getattr(sys, 'frozen', False):
@@ -76,6 +80,17 @@ class ApplicationCore:
         expression_map = await self._synchronize_expressions()
 
         self.intent_resolver = KeywordIntentResolver(self.event_bus, expression_map)
+
+        if self.test_mode:
+            logger.info("--- RUNNING IN TEST MODE ---")
+            self.input_processor = TestInputProcessor(self.event_bus)
+        else:
+            # This is where the real ASRProcessor would be initialized
+            # from inputs.asr_processor import ASRProcessor
+            # self.input_processor = ASRProcessor(...) 
+            logger.warning("ASR/Microphone input is currently disabled due to system-level dependency issues.")
+            logger.warning("To run with microphone, the onnxruntime issue must be resolved first.")
+            self.input_processor = None # No input processor if not in test mode
 
     async def _synchronize_expressions(self):
         logger.info("Checking for expression updates from VTube Studio...")
@@ -143,33 +158,33 @@ class ApplicationCore:
             return
 
         logger.info("Starting application components...")
-
-        # --- Simulation task for testing ---
-        async def simulate_and_shutdown():
-            await asyncio.sleep(5) # Wait for everything to settle
-            logger.warning("--- SIMULATING VOICE COMMAND ---")
-            await self.event_bus.publish("transcription_received", "I am so angry")
-            logger.warning("--- SIMULATION SENT ---")
-            await asyncio.sleep(2) # Wait for processing
-            logger.warning("--- SHUTTING DOWN APPLICATION ---")
-            # Cancel all other tasks to gracefully exit
-            current_task = asyncio.current_task()
-            for task in asyncio.all_tasks():
-                if task is not current_task:
-                    task.cancel()
-
+        
         tasks = [
             asyncio.create_task(self.intent_resolver.resolve_intent()),
             asyncio.create_task(self.vts_agent.run()),
-            asyncio.create_task(simulate_and_shutdown()), # Add simulation and shutdown task
         ]
+
+        if self.input_processor:
+            tasks.append(asyncio.create_task(self.input_processor.process_input()))
+
+        # If in test mode, we need a way to stop the application
+        if self.test_mode:
+            async def test_shutdown_manager():
+                await asyncio.sleep(10) # Give ample time for the test event to fire and be processed
+                logger.warning("--- TEST COMPLETE: SHUTTING DOWN APPLICATION ---")
+                for task in tasks:
+                    task.cancel()
+            tasks.append(asyncio.create_task(test_shutdown_manager()))
 
         try:
             await asyncio.gather(*tasks)
+        except asyncio.CancelledError:
+            logger.info("Application tasks were cancelled.")
         except KeyboardInterrupt:
             logger.info("Stopping application...")
         finally:
-            for task in tasks:
-                task.cancel()
+            for task in asyncio.all_tasks():
+                if task is not asyncio.current_task():
+                    task.cancel()
             if self.vts_agent:
                 await self.vts_agent.disconnect()

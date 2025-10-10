@@ -171,3 +171,45 @@
 2025-10-10 13:15:42.010 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 5 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
 2025-10-10 13:15:42.011 | ERROR    | agents.vts_output_agent:connect:36 - Could not connect to VTube Studio after all retries.
 2025-10-10 13:15:42.011 | ERROR    | agents.vts_output_agent:connect:37 - Please ensure VTube Studio is running and the API is enabled on port 8001.
+2025-10-10 18:29:08.059 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 1 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 18:29:08.059 | INFO     | agents.vts_output_agent:connect:33 - Retrying in 5 seconds...
+2025-10-10 18:29:17.107 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 2 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 18:29:17.107 | INFO     | agents.vts_output_agent:connect:33 - Retrying in 5 seconds...
+2025-10-10 18:29:26.146 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 3 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 18:29:26.147 | INFO     | agents.vts_output_agent:connect:33 - Retrying in 5 seconds...
+2025-10-10 18:29:35.212 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 4 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 18:29:35.212 | INFO     | agents.vts_output_agent:connect:33 - Retrying in 5 seconds...
+2025-10-10 18:29:44.266 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 5 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 18:29:44.267 | ERROR    | agents.vts_output_agent:connect:36 - Could not connect to VTube Studio after all retries.
+2025-10-10 18:29:44.267 | ERROR    | agents.vts_output_agent:connect:37 - Please ensure VTube Studio is running and the API is enabled on port 8001.
+2025-10-10 18:29:54.186 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 1 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 18:29:54.187 | INFO     | agents.vts_output_agent:connect:33 - Retrying in 5 seconds...
+2025-10-10 18:30:03.249 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 2 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 18:30:03.250 | INFO     | agents.vts_output_agent:connect:33 - Retrying in 5 seconds...
+2025-10-10 18:30:12.282 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 3 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 18:30:12.282 | INFO     | agents.vts_output_agent:connect:33 - Retrying in 5 seconds...
+2025-10-10 18:30:21.331 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 4 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 18:30:21.331 | INFO     | agents.vts_output_agent:connect:33 - Retrying in 5 seconds...
+2025-10-10 18:30:30.384 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 5 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 18:30:30.384 | ERROR    | agents.vts_output_agent:connect:36 - Could not connect to VTube Studio after all retries.
+2025-10-10 18:30:30.384 | ERROR    | agents.vts_output_agent:connect:37 - Please ensure VTube Studio is running and the API is enabled on port 8001.
+2025-10-10 18:31:59.119 | INFO     | agents.vts_output_agent:connect:28 - Connected to VTube Studio.
+2025-10-10 18:31:59.163 | INFO     | agents.vts_output_agent:authenticate:47 - Authenticated successfully with VTube Studio.
+2025-10-10 18:31:59.163 | INFO     | core.application_core:_synchronize_expressions:95 - Checking for expression updates from VTube Studio...
+2025-10-10 18:31:59.163 | INFO     | agents.vts_output_agent:get_hotkey_list:69 - Requesting hotkey list from VTube Studio...
+2025-10-10 18:31:59.190 | INFO     | core.application_core:_synchronize_expressions:146 - Expression map created. Ready to detect keywords.
+2025-10-10 18:33:00.457 | INFO     | agents.vts_output_agent:connect:28 - Connected to VTube Studio.
+2025-10-10 18:33:00.477 | INFO     | agents.vts_output_agent:authenticate:47 - Authenticated successfully with VTube Studio.
+2025-10-10 18:33:00.478 | INFO     | core.application_core:_synchronize_expressions:96 - Checking for expression updates from VTube Studio...
+2025-10-10 18:33:00.478 | INFO     | agents.vts_output_agent:get_hotkey_list:69 - Requesting hotkey list from VTube Studio...
+2025-10-10 18:33:00.490 | INFO     | core.application_core:_synchronize_expressions:147 - Expression map created. Ready to detect keywords.
+2025-10-10 18:33:00.491 | INFO     | core.application_core:_initialize_components:85 - --- RUNNING IN TEST MODE ---
+2025-10-10 18:33:00.491 | INFO     | core.application_core:run:160 - Starting application components...
+2025-10-10 18:33:05.503 | WARNING  | inputs.test_input_processor:process_input:15 - --- SIMULATING VOICE COMMAND: 'I am so angry' ---
+2025-10-10 18:33:05.503 | WARNING  | inputs.test_input_processor:process_input:17 - --- SIMULATION SENT ---
+2025-10-10 18:33:05.503 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: I am so angry
+2025-10-10 18:33:05.504 | INFO     | core.intent_resolver:_process_one_event:42 - Keyword 'angry' detected. Triggering expression: 937bc0c1af794cdca15ded0c34981894
+2025-10-10 18:33:05.534 | INFO     | agents.vts_output_agent:trigger_hotkey:61 - Triggered hotkey: 937bc0c1af794cdca15ded0c34981894
+2025-10-10 18:33:10.501 | WARNING  | core.application_core:test_shutdown_manager:174 - --- TEST COMPLETE: SHUTTING DOWN APPLICATION ---
+2025-10-10 18:33:10.502 | INFO     | core.application_core:run:182 - Application tasks were cancelled.
+2025-10-10 18:33:10.503 | INFO     | agents.vts_output_agent:disconnect:83 - Disconnected from VTube Studio.
