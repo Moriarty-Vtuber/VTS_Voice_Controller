@@ -7,56 +7,61 @@ from PyQt6.QtCore import Qt
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("VTS Voice Controller")
-        self.setGeometry(100, 100, 800, 600)
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.main_layout = QVBoxLayout(self.central_widget)
 
-        self._init_status_panel()
-        self._init_controls()
-        self._init_transcription_log()
-        self._init_keyword_editor()
+        self._init_ui_elements()
+        self.retranslate_ui("en") # Set initial language to English
 
-    def _init_status_panel(self):
+    def _init_ui_elements(self):
+        # Status Panel
         status_layout = QHBoxLayout()
-        self.vts_status_label = QLabel("VTS Status: Disconnected")
-        self.asr_status_label = QLabel("ASR Status: Idle")
-        self.app_status_label = QLabel("App Status: Stopped")
-
+        self.vts_status_label = QLabel()
+        self.asr_status_label = QLabel()
+        self.app_status_label = QLabel()
         status_layout.addWidget(self.vts_status_label)
         status_layout.addWidget(self.asr_status_label)
         status_layout.addWidget(self.app_status_label)
         self.main_layout.addLayout(status_layout)
 
-    def _init_controls(self):
+        # Controls
         controls_layout = QHBoxLayout()
-        self.start_button = QPushButton("Start Application")
-        self.stop_button = QPushButton("Stop Application")
+        self.start_button = QPushButton()
+        self.stop_button = QPushButton()
         self.stop_button.setEnabled(False)
-
+        self.mode_label = QLabel()
         self.mode_selector = QComboBox()
         self.mode_selector.addItems(["fast", "accurate"])
-
         controls_layout.addWidget(self.start_button)
         controls_layout.addWidget(self.stop_button)
-        controls_layout.addWidget(QLabel("Recognition Mode:"))
+        controls_layout.addStretch()
+        controls_layout.addWidget(self.mode_label)
         controls_layout.addWidget(self.mode_selector)
         self.main_layout.addLayout(controls_layout)
 
-    def _init_transcription_log(self):
+        # Transcription Log
         self.transcription_log = QTextEdit()
         self.transcription_log.setReadOnly(True)
-        self.transcription_log.setPlaceholderText("Live Transcription Output...")
         self.main_layout.addWidget(self.transcription_log)
 
-    def _init_keyword_editor(self):
+        # Keyword Editor
         self.keyword_editor = QTableWidget()
         self.keyword_editor.setColumnCount(3)
-        self.keyword_editor.setHorizontalHeaderLabels(["Expression Name", "Keywords", "Cooldown (s)"])
         self.keyword_editor.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.main_layout.addWidget(self.keyword_editor)
+
+    def retranslate_ui(self, language: str):
+        # In the future, this could load text from a language file
+        if language == "en":
+            self.setWindowTitle("VTS Voice Controller")
+            self.set_status(vts="Disconnected", asr="Idle", app="Stopped") # Set initial text
+            self.mode_label.setText("Recognition Mode:")
+            self.start_button.setText("Start Application")
+            self.stop_button.setText("Stop Application")
+            self.transcription_log.setPlaceholderText("Live Transcription Output...")
+            self.keyword_editor.setHorizontalHeaderLabels(["Expression Name", "Keywords", "Cooldown (s)"])
 
     def append_log(self, text: str):
         self.transcription_log.append(text)

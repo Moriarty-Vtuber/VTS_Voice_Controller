@@ -22,10 +22,12 @@ class VTSWebSocketAgent(VTSOutputAgent):
 
     async def connect(self, max_retries=5, retry_delay=5):
         """Connect to VTube Studio with a retry mechanism."""
+        await self.event_bus.publish("vts_status_update", "Connecting...")
         for attempt in range(max_retries):
             try:
                 await self.vts.connect()
                 logger.info("Connected to VTube Studio.")
+                await self.event_bus.publish("vts_status_update", "Connected")
                 return
             except Exception as e:
                 logger.warning(f"Connection attempt {attempt + 1} of {max_retries} failed: {e}")
@@ -35,6 +37,7 @@ class VTSWebSocketAgent(VTSOutputAgent):
                 else:
                     logger.error("Could not connect to VTube Studio after all retries.")
                     logger.error("Please ensure VTube Studio is running and the API is enabled on port 8001.")
+                    await self.event_bus.publish("vts_status_update", "Connection Failed")
                     raise
 
     async def authenticate(self):
@@ -45,10 +48,13 @@ class VTSWebSocketAgent(VTSOutputAgent):
                 authenticated = await self.vts.request_authenticate()
             if authenticated:
                 logger.info("Authenticated successfully with VTube Studio.")
+                await self.event_bus.publish("vts_status_update", "Authenticated")
             else:
                 logger.warning("Authentication failed. Please allow the plugin in VTube Studio.")
+                await self.event_bus.publish("vts_status_update", "Authentication Failed")
         except Exception as e:
             logger.error(f"Authentication error: {e}")
+            await self.event_bus.publish("vts_status_update", "Authentication Error")
             raise
 
     async def trigger_hotkey(self, hotkey_id: str):
@@ -81,6 +87,7 @@ class VTSWebSocketAgent(VTSOutputAgent):
         if self.vts.get_connection_status() == 1:
             await self.vts.close()
             logger.info("Disconnected from VTube Studio.")
+            await self.event_bus.publish("vts_status_update", "Disconnected")
 
     async def run(self):
         """Listen for hotkey trigger events on the event bus."""

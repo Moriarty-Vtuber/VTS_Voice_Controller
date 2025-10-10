@@ -4,38 +4,46 @@ import yaml
 from loguru import logger
 
 from PyQt6.QtWidgets import QApplication
-from qasync import QEventLoop, QApplication as QAsyncApplication
 
 from ui.main_window import MainWindow
 from core.application_core import ApplicationCore
 
 def load_initial_config():
-    """Synchronously loads the config for initial UI population."""
     try:
         with open("vts_config.yaml", 'r') as f:
             return yaml.safe_load(f)
-    except FileNotFoundError:
-        logger.warning("vts_config.yaml not found. UI will be empty on start.")
-        return None
     except Exception as e:
-        logger.error(f"Error loading initial config: {e}")
+        logger.error(f"Failed to load initial config: {e}")
         return None
 
 class AppUI:
     def __init__(self):
-        self.app = QAsyncApplication(sys.argv)
+        # App instance is now managed in vts_main.py
         self.main_window = MainWindow()
         self.app_core_task = None
 
+        # Connect signals to synchronous slots
         self.main_window.start_button.clicked.connect(self._start_button_clicked)
-        self.main_window.stop_button.clicked.connect(self.stop_application)
+        self.main_window.stop_button.clicked.connect(self._stop_button_clicked)
+
+        # Initial UI setup
+        initial_config = load_initial_config()
+        if initial_config:
+            self.main_window.populate_keyword_editor(initial_config.get('expressions', {}))
+        
+        self.main_window.show()
 
     def _start_button_clicked(self):
-        """Synchronous slot to trigger the async start_application task."""
-        asyncio.create_task(self.start_application())
+        logger.info("--- UI: Start button clicked ---")
+        # This synchronous method creates the async task
+        self.app_core_task = asyncio.create_task(self.start_application())
+
+    def _stop_button_clicked(self):
+        logger.info("--- UI: Stop button clicked ---")
+        if self.app_core_task:
+            self.app_core_task.cancel()
 
     async def start_application(self):
-        logger.info("UI: Start button clicked.")
         self.main_window.set_status(app="Starting...")
         self.main_window.start_button.setEnabled(False)
         self.main_window.mode_selector.setEnabled(False)
@@ -46,24 +54,20 @@ class AppUI:
             config_path="vts_config.yaml",
             recognition_mode=recognition_mode
         )
-        
-        self.app_core_task = asyncio.create_task(self.run_app_core(app_core))
 
-    def stop_application(self):
-        logger.info("UI: Stop button clicked.")
-        self.main_window.set_status(app="Stopping...")
-        if self.app_core_task:
-            self.app_core_task.cancel()
-        # UI state will be reset in the finally block of run_app_core
-
-    async def run_app_core(self, app_core: ApplicationCore):
-        # Setup listeners on the actual running instance
+        # Setup listeners on the running instance
         transcription_queue = await app_core.event_bus.subscribe("transcription_received")
         hotkey_queue = await app_core.event_bus.subscribe("hotkey_triggered")
-        
+        vts_status_queue = await app_core.event_bus.subscribe("vts_status_update")
+        asr_status_queue = await app_core.event_bus.subscribe("asr_status_update")
+        asr_ready_queue = await app_core.event_bus.subscribe("asr_ready")
+
         listener_tasks = [
             asyncio.create_task(self._handle_transcription_events(transcription_queue)),
             asyncio.create_task(self._handle_hotkey_events(hotkey_queue)),
+            asyncio.create_task(self._handle_vts_status_events(vts_status_queue)),
+            asyncio.create_task(self._handle_asr_status_events(asr_status_queue)),
+            asyncio.create_task(self._handle_asr_ready_events(asr_ready_queue)),
         ]
 
         try:
@@ -94,26 +98,34 @@ class AppUI:
         while True:
             try:
                 event = await queue.get()
-                self.main_window.append_log(f">>> Triggered Hotkey: {event.payload}")
+                self.main_window.append_log(f">>> Triggered: {event.payload}")
                 queue.task_done()
             except asyncio.CancelledError:
                 break
 
-async def main():
-    ui = AppUI()
-    
-    # Populate UI with initial data
-    initial_config = load_initial_config()
-    if initial_config:
-        ui.main_window.populate_keyword_editor(initial_config.get('expressions', {}))
+    async def _handle_vts_status_events(self, queue: asyncio.Queue):
+        while True:
+            try:
+                event = await queue.get()
+                self.main_window.set_status(vts=event.payload)
+                queue.task_done()
+            except asyncio.CancelledError:
+                break
 
-    ui.main_window.show()
-    sys.exit(ui.app.exec())
+    async def _handle_asr_status_events(self, queue: asyncio.Queue):
+        while True:
+            try:
+                event = await queue.get()
+                self.main_window.set_status(asr=event.payload)
+                queue.task_done()
+            except asyncio.CancelledError:
+                break
 
-if __name__ == "__main__":
-    try:
-        if sys.platform == 'win32':
-            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        pass
+    async def _handle_asr_ready_events(self, queue: asyncio.Queue):
+        while True:
+            try:
+                await queue.get()
+                self.main_window.set_status(app="Running")
+                queue.task_done()
+            except asyncio.CancelledError:
+                break

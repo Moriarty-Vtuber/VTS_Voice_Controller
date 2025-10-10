@@ -128,6 +128,7 @@ class ASRProcessor(InputProcessor):
 
     async def process_input(self):
         logger.info("Starting microphone stream...")
+        await self.event_bus.publish("asr_status_update", "Listening")
         loop = asyncio.get_running_loop()
 
         def sync_audio_callback(indata, frames, time, status):
@@ -138,10 +139,12 @@ class ASRProcessor(InputProcessor):
                 await asyncio.sleep(0.05)  # Process buffer every 0.05 seconds (50ms)
                 async with self.buffer_lock:
                     if self.audio_buffer.size > 0:
+                        await self.event_bus.publish("asr_status_update", "Transcribing")
                         transcribed_text = self._transcribe_np(self.audio_buffer)
                         if transcribed_text:
                             await self.event_bus.publish("transcription_received", transcribed_text)
                         self.audio_buffer = np.array([], dtype=np.float32)  # Clear the buffer
+                        await self.event_bus.publish("asr_status_update", "Listening")
 
         audio_processing_task = asyncio.create_task(process_audio_buffer_periodically())
 
@@ -151,8 +154,10 @@ class ASRProcessor(InputProcessor):
             with sd.InputStream(callback=sync_audio_callback,
                                  channels=1, dtype='float32', samplerate=self.SAMPLE_RATE, blocksize=blocksize):
                 logger.info("Microphone stream started. Say something!")
+                await self.event_bus.publish("asr_ready", True)
                 await audio_processing_task
         except Exception as e:
             logger.error(f"An error occurred during audio streaming: {e}")
+            await self.event_bus.publish("asr_status_update", "Error")
             audio_processing_task.cancel()
             raise
