@@ -20,14 +20,22 @@ class VTSWebSocketAgent(VTSOutputAgent):
         })
         self.request_lock = asyncio.Lock()  # For serializing sensitive requests
 
-    async def connect(self):
-        """Connect to VTube Studio."""
-        try:
-            await self.vts.connect()
-            logger.info("Connected to VTube Studio.")
-        except Exception as e:
-            logger.error(f"Failed to connect to VTube Studio: {e}")
-            raise
+    async def connect(self, max_retries=5, retry_delay=5):
+        """Connect to VTube Studio with a retry mechanism."""
+        for attempt in range(max_retries):
+            try:
+                await self.vts.connect()
+                logger.info("Connected to VTube Studio.")
+                return
+            except Exception as e:
+                logger.warning(f"Connection attempt {attempt + 1} of {max_retries} failed: {e}")
+                if attempt < max_retries - 1:
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    logger.error("Could not connect to VTube Studio after all retries.")
+                    logger.error("Please ensure VTube Studio is running and the API is enabled on port 8001.")
+                    raise
 
     async def authenticate(self):
         """Authenticate with VTube Studio."""

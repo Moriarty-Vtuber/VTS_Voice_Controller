@@ -159,3 +159,15 @@
 2025-10-10 13:01:45.583 | INFO     | agents.vts_output_agent:trigger_hotkey:53 - Triggered hotkey: 937bc0c1af794cdca15ded0c34981894
 2025-10-10 13:01:47.507 | WARNING  | core.application_core:simulate_and_shutdown:185 - --- SHUTTING DOWN APPLICATION ---
 2025-10-10 13:01:47.537 | INFO     | agents.vts_output_agent:disconnect:75 - Disconnected from VTube Studio.
+2025-10-10 13:14:06.477 | ERROR    | agents.vts_output_agent:connect:29 - Failed to connect to VTube Studio: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 13:15:05.781 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 1 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 13:15:05.781 | INFO     | agents.vts_output_agent:connect:33 - Retrying in 5 seconds...
+2025-10-10 13:15:14.847 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 2 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 13:15:14.847 | INFO     | agents.vts_output_agent:connect:33 - Retrying in 5 seconds...
+2025-10-10 13:15:23.917 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 3 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 13:15:23.917 | INFO     | agents.vts_output_agent:connect:33 - Retrying in 5 seconds...
+2025-10-10 13:15:32.968 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 4 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 13:15:32.968 | INFO     | agents.vts_output_agent:connect:33 - Retrying in 5 seconds...
+2025-10-10 13:15:42.010 | WARNING  | agents.vts_output_agent:connect:31 - Connection attempt 5 of 5 failed: [WinError 1225] 遠端電腦拒絕網路連線。
+2025-10-10 13:15:42.011 | ERROR    | agents.vts_output_agent:connect:36 - Could not connect to VTube Studio after all retries.
+2025-10-10 13:15:42.011 | ERROR    | agents.vts_output_agent:connect:37 - Please ensure VTube Studio is running and the API is enabled on port 8001.

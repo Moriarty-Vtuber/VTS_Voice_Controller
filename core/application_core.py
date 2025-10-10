@@ -6,10 +6,8 @@ import os
 import sys
 
 from core.event_bus import EventBus
-from inputs.asr_processor import ASRProcessor
 from agents.vts_output_agent import VTSWebSocketAgent
 from core.intent_resolver import KeywordIntentResolver
-from inputs.utils.utils import ensure_model_downloaded_and_extracted
 
 class ApplicationCore:
     def __init__(self, config_path: str):
@@ -17,7 +15,6 @@ class ApplicationCore:
         self.event_bus = EventBus()
         self.config = self._load_config()
         self.vts_agent = None
-        self.asr_processor = None
         self.intent_resolver = None
 
     def _load_config(self):
@@ -80,35 +77,6 @@ class ApplicationCore:
 
         self.intent_resolver = KeywordIntentResolver(self.event_bus, expression_map)
 
-        if getattr(sys, 'frozen', False):
-            base_path = os.path.dirname(sys.executable)
-        else:
-            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-        model_config = {
-            "english": {
-                "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2",
-                "tokens": "tokens.txt",
-                "encoder": "encoder-epoch-99-avg-1.int8.onnx",
-                "decoder": "decoder-epoch-99-avg-1.int8.onnx",
-                "joiner": "joiner-epoch-99-avg-1.int8.onnx",
-            }
-        }
-        language = "english"
-        selected_model = model_config.get(language.lower())
-        model_url = selected_model["url"]
-        model_base_dir = os.path.join(base_path, "models")
-        actual_model_dir = ensure_model_downloaded_and_extracted(model_url, model_base_dir)
-
-        self.asr_processor = ASRProcessor(
-            event_bus=self.event_bus,
-            tokens_path=os.path.join(actual_model_dir, selected_model["tokens"]),
-            encoder_path=os.path.join(actual_model_dir, selected_model["encoder"]),
-            decoder_path=os.path.join(actual_model_dir, selected_model["decoder"]),
-            joiner_path=os.path.join(actual_model_dir, selected_model["joiner"]),
-            provider="cuda",
-        )
-
     async def _synchronize_expressions(self):
         logger.info("Checking for expression updates from VTube Studio...")
         try:
@@ -170,12 +138,13 @@ class ApplicationCore:
 
     async def run(self):
         await self._initialize_components()
-        if not self.vts_agent or not self.asr_processor or not self.intent_resolver:
+        if not self.vts_agent or not self.intent_resolver:
             logger.error("Application cannot start due to initialization failure.")
             return
 
         logger.info("Starting application components...")
-        # --- Temporary simulation task for testing ---
+
+        # --- Simulation task for testing ---
         async def simulate_and_shutdown():
             await asyncio.sleep(5) # Wait for everything to settle
             logger.warning("--- SIMULATING VOICE COMMAND ---")
@@ -190,7 +159,6 @@ class ApplicationCore:
                     task.cancel()
 
         tasks = [
-            asyncio.create_task(self.asr_processor.process_input()),
             asyncio.create_task(self.intent_resolver.resolve_intent()),
             asyncio.create_task(self.vts_agent.run()),
             asyncio.create_task(simulate_and_shutdown()), # Add simulation and shutdown task
