@@ -6,3 +6,4 @@ loguru
 requests
 tqdm
 onnxruntime
+webrtcvad-wheels

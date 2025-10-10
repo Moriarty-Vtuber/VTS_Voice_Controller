@@ -5,6 +5,7 @@ import numpy as np
 import sherpa_onnx
 from loguru import logger
 import onnxruntime
+import webrtcvad
 
 from core.interfaces import InputProcessor
 from core.event_bus import EventBus
@@ -21,6 +22,8 @@ class ASRProcessor(InputProcessor):
         debug: bool = False,
         sample_rate: int = 16000,
         provider: str = "cpu",
+        vad_aggressiveness: int = 3, # 0 (least aggressive) to 3 (most aggressive)
+        vad_frame_duration_ms: int = 30, # 10, 20, or 30
     ) -> None:
         self.event_bus = event_bus
         self.tokens_path = tokens_path
@@ -46,6 +49,12 @@ class ASRProcessor(InputProcessor):
         self.stream = self.recognizer.create_stream()
         self.audio_buffer = np.array([], dtype=np.float32)
         self.buffer_lock = asyncio.Lock()
+
+        # VAD initialization
+        self.vad = webrtcvad.Vad(vad_aggressiveness)
+        self.vad_frame_duration_ms = vad_frame_duration_ms
+        self.vad_frame_size = int(self.SAMPLE_RATE * self.vad_frame_duration_ms / 1000)
+        self.vad_buffer = b'' # Buffer for VAD frames
 
     def _create_recognizer(self):
         return sherpa_onnx.OnlineRecognizer.from_transducer(
@@ -81,8 +90,25 @@ class ASRProcessor(InputProcessor):
     async def _audio_callback(self, indata, frames, time, status):
         if status:
             logger.warning(status)
-        async with self.buffer_lock:
-            self.audio_buffer = np.concatenate((self.audio_buffer, indata.flatten()))
+
+        # Convert float32 to int16 for VAD
+        pcm_data = (indata * 32767).astype(np.int16).tobytes()
+        self.vad_buffer += pcm_data
+
+        # Process VAD frames
+        while len(self.vad_buffer) >= self.vad_frame_size * 2: # 2 bytes per int16 sample
+            frame = self.vad_buffer[:self.vad_frame_size * 2]
+            self.vad_buffer = self.vad_buffer[self.vad_frame_size * 2:]
+
+            is_speech = self.vad.is_speech(frame, self.SAMPLE_RATE)
+
+            if is_speech:
+                # If speech is detected, append to the ASR buffer
+                async with self.buffer_lock:
+                    # Convert back to float32 for ASR if needed, or handle directly if ASR accepts int16
+                    # Sherpa-onnx expects float32, so convert back
+                    float_frame = np.frombuffer(frame, dtype=np.int16).astype(np.float32) / 32767.0
+                    self.audio_buffer = np.concatenate((self.audio_buffer, float_frame))
 
     async def process_input(self):
         logger.info("Starting microphone stream...")
@@ -93,7 +119,7 @@ class ASRProcessor(InputProcessor):
 
         async def process_audio_buffer_periodically():
             while True:
-                await asyncio.sleep(0.5)  # Process buffer every 0.5 seconds
+                await asyncio.sleep(0.05)  # Process buffer every 0.05 seconds (50ms)
                 async with self.buffer_lock:
                     if self.audio_buffer.size > 0:
                         transcribed_text = self._transcribe_np(self.audio_buffer)
@@ -104,7 +130,8 @@ class ASRProcessor(InputProcessor):
         audio_processing_task = asyncio.create_task(process_audio_buffer_periodically())
 
         try:
-            blocksize = int(self.SAMPLE_RATE * 0.2) # 200ms chunks
+            # blocksize should be a multiple of VAD frame size
+            blocksize = self.vad_frame_size * 2 # Process two VAD frames at a time, for example
             with sd.InputStream(callback=sync_audio_callback,
                                  channels=1, dtype='float32', samplerate=self.SAMPLE_RATE, blocksize=blocksize):
                 logger.info("Microphone stream started. Say something!")
