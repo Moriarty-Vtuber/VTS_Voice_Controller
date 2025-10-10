@@ -934,3 +934,6 @@
 2025-10-10 22:02:28.594 | INFO     | core.intent_resolver:_process_one_event:21 - Transcribed: I SHOCK YOU KNOW
 2025-10-10 22:02:28.595 | INFO     | core.intent_resolver:_process_one_event:28 - Keyword 'shock' detected, but expression 40209f606adc4ca4a6e7df620f735bf7 is on cooldown for 25.6 more seconds.
 2025-10-10 22:02:28.595 | INFO     | core.intent_resolver:_process_one_event:28 - Keyword 'Shock' detected, but expression 40209f606adc4ca4a6e7df620f735bf7 is on cooldown for 25.6 more seconds.
+2025-10-10 22:36:24.628 | INFO     | ui.app_ui:start_application:22 - UI: Start button clicked.
+2025-10-10 22:36:54.717 | INFO     | ui.app_ui:run_app_core:49 - Application core task was cancelled.
+2025-10-10 22:52:47.299 | INFO     | ui.app_ui:start_application:34 - UI: Start button clicked.

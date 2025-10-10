@@ -1,28 +1,24 @@
 import asyncio
-import argparse
 from loguru import logger
 import os
+import sys
 
-from core.application_core import ApplicationCore
+from ui.app_ui import main as ui_main
 
 async def main():
-    parser = argparse.ArgumentParser(description="VTS Voice Controller")
-    parser.add_argument("--test", action="store_true", help="Run in test mode with a simulated voice command.")
-    parser.add_argument("--mode", type=str, choices=['fast', 'accurate'], default='fast', help="Set the recognition mode: 'fast' for low latency, 'accurate' for higher accuracy.")
-    args = parser.parse_args()
-
     # --- Setup Logging ---
     if not os.path.exists("logs"):
         os.mkdir("logs")
     log_path = os.path.join("logs", "vts_controller.log")
     logger.add(log_path, rotation="10 MB", retention="7 days", level="INFO", backtrace=True, diagnose=True)
 
-    config_path = "vts_config.yaml"
-    app = ApplicationCore(config_path, test_mode=args.test, recognition_mode=args.mode)
-    await app.run()
+    await ui_main()
 
 if __name__ == "__main__":
     try:
+        # Add a workaround for a known issue with qasync and Windows
+        if sys.platform == 'win32':
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
         asyncio.run(main())
     except KeyboardInterrupt:
         logger.info("Program terminated by user.")

@@ -3,7 +3,7 @@
 echo "--- Activating virtual environment ---"
 call .\.venv\Scripts\activate.bat
 
-echo "--- Starting VTS Voice Controller in Normal Mode ---"
+echo "--- Launching VTS Voice Controller UI ---"
 python vts_main.py
 
 echo.
