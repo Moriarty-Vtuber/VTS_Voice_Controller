@@ -18,13 +18,14 @@ def load_initial_config():
 
 class AppUI:
     def __init__(self):
-        # App instance is now managed in vts_main.py
         self.main_window = MainWindow()
         self.app_core_task = None
+        self.current_language = "en"
 
-        # Connect signals to synchronous slots
+        # Connect signals
         self.main_window.start_button.clicked.connect(self._start_button_clicked)
         self.main_window.stop_button.clicked.connect(self._stop_button_clicked)
+        self.main_window.language_selector.currentTextChanged.connect(self._language_changed)
 
         # Initial UI setup
         initial_config = load_initial_config()
@@ -33,9 +34,13 @@ class AppUI:
         
         self.main_window.show()
 
+    def _language_changed(self, language: str):
+        logger.info(f"--- UI: Language set to {language} for next run ---")
+        self.current_language = language
+        self.main_window.retranslate_ui(language)
+
     def _start_button_clicked(self):
         logger.info("--- UI: Start button clicked ---")
-        # This synchronous method creates the async task
         self.app_core_task = asyncio.create_task(self.start_application())
 
     def _stop_button_clicked(self):
@@ -47,12 +52,14 @@ class AppUI:
         self.main_window.set_status(app="Starting...")
         self.main_window.start_button.setEnabled(False)
         self.main_window.mode_selector.setEnabled(False)
+        self.main_window.language_selector.setEnabled(False)
         self.main_window.stop_button.setEnabled(True)
 
         recognition_mode = self.main_window.mode_selector.currentText()
         app_core = ApplicationCore(
             config_path="vts_config.yaml",
-            recognition_mode=recognition_mode
+            recognition_mode=recognition_mode,
+            language=self.current_language
         )
 
         # Setup listeners on the running instance
@@ -83,6 +90,7 @@ class AppUI:
             self.main_window.set_status(app="Stopped", vts="Disconnected", asr="Idle")
             self.main_window.start_button.setEnabled(True)
             self.main_window.mode_selector.setEnabled(True)
+            self.main_window.language_selector.setEnabled(True)
             self.main_window.stop_button.setEnabled(False)
 
     async def _handle_transcription_events(self, queue: asyncio.Queue):

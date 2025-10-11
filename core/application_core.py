@@ -13,17 +13,17 @@ from inputs.asr_processor import ASRProcessor
 from inputs.utils.utils import ensure_model_downloaded_and_extracted
 
 class ApplicationCore:
-    def __init__(self, config_path: str, test_mode: bool = False, recognition_mode: str = "fast"):
+    def __init__(self, config_path: str, test_mode: bool = False, recognition_mode: str = "fast", language: str = "en"):
         self.config_path = config_path
         self.test_mode = test_mode
         self.recognition_mode = recognition_mode
-        self.config_path = config_path
-        self.test_mode = test_mode
         self.event_bus = EventBus()
         self.config = self._load_config()
+        self.models_config = self._load_models_config()
         self.vts_agent = None
         self.intent_resolver = None
         self.input_processor = None
+        self.current_language = language
 
     def _load_config(self):
         if getattr(sys, 'frozen', False):
@@ -65,6 +65,61 @@ class ApplicationCore:
                 logger.error(f"Error loading configuration from {config_path}: {e}")
                 return None
 
+    def _load_models_config(self):
+        if getattr(sys, 'frozen', False):
+            base_path = os.path.dirname(sys.executable)
+        else:
+            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        models_config_path = os.path.join(base_path, 'config', 'models.yaml')
+        try:
+            with open(models_config_path, 'r') as f:
+                return yaml.safe_load(f)
+        except Exception as e:
+            logger.error(f"Error loading models configuration from {models_config_path}: {e}")
+            return None
+
+    async def set_language(self, language: str):
+        if not self.models_config:
+            logger.error("Models configuration not loaded. Cannot switch language.")
+            return
+
+        self.current_language = language
+        logger.info(f"Attempting to set ASR language to: {language}")
+
+        selected_model = self.models_config.get(language.lower())
+        if not selected_model:
+            logger.error(f"Language '{language}' not supported in models.yaml. Please check the config.")
+            return
+
+        model_url = selected_model["url"]
+        if getattr(sys, 'frozen', False):
+            base_path = os.path.dirname(sys.executable)
+        else:
+            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        model_base_dir = os.path.join(base_path, "models")
+        
+        try:
+            actual_model_dir = ensure_model_downloaded_and_extracted(model_url, model_base_dir)
+        except Exception as e:
+            logger.error(f"Failed to prepare model for language {language}: {e}")
+            return
+
+        # Stop existing input processor if it's running
+        if self.input_processor and hasattr(self.input_processor, 'stop'):
+            await self.input_processor.stop()
+
+        params = selected_model["params"]
+        self.input_processor = ASRProcessor(
+            event_bus=self.event_bus,
+            tokens_path=os.path.join(actual_model_dir, params["tokens"]),
+            encoder_path=os.path.join(actual_model_dir, params["encoder"]),
+            decoder_path=os.path.join(actual_model_dir, params["decoder"]),
+            joiner_path=os.path.join(actual_model_dir, params["joiner"]),
+            provider="cpu", # Defaulting to CPU
+            recognition_mode=self.recognition_mode,
+        )
+        logger.info(f"Successfully initialized ASR for language: {language}")
+
     async def _initialize_components(self):
         if not self.config:
             logger.error("Initialization failed: Configuration is not loaded.")
@@ -81,7 +136,7 @@ class ApplicationCore:
         await self.vts_agent.connect()
         await self.vts_agent.authenticate()
 
-        expression_map = await self._synchronize_expressions()
+        expression_map = await self._synchronize_expressions() or {}
 
         self.intent_resolver = KeywordIntentResolver(self.event_bus, expression_map)
 
@@ -90,100 +145,7 @@ class ApplicationCore:
             self.input_processor = TestInputProcessor(self.event_bus)
         else:
             logger.info("--- RUNNING IN NORMAL MODE (MICROPHONE INPUT) ---")
-            # This is where the real ASRProcessor is initialized
-            from inputs.utils.utils import ensure_model_downloaded_and_extracted
-            model_config = {
-                "english": {
-                    "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2",
-                    "tokens": "tokens.txt",
-                    "encoder": "encoder-epoch-99-avg-1.int8.onnx",
-                    "decoder": "decoder-epoch-99-avg-1.int8.onnx",
-                    "joiner": "joiner-epoch-99-avg-1.int8.onnx",
-                }
-            }
-            language = "english"  # Default language
-            selected_model = model_config.get(language.lower())
-            if not selected_model:
-                logger.error(f"Language '{language}' not supported. Please check the model_config.")
-                return
-
-            model_url = selected_model["url"]
-            if getattr(sys, 'frozen', False):
-                base_path = os.path.dirname(sys.executable)
-            else:
-                base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            model_base_dir = os.path.join(base_path, "models")
-            
-            actual_model_dir = ensure_model_downloaded_and_extracted(model_url, model_base_dir)
-
-            self.input_processor = ASRProcessor(
-                event_bus=self.event_bus,
-                tokens_path=os.path.join(actual_model_dir, selected_model["tokens"]),
-                encoder_path=os.path.join(actual_model_dir, selected_model["encoder"]),
-                decoder_path=os.path.join(actual_model_dir, selected_model["decoder"]),
-                joiner_path=os.path.join(actual_model_dir, selected_model["joiner"]),
-                provider="cpu", # Defaulting to CPU for broader compatibility
-                recognition_mode=self.recognition_mode,
-            )
-
-    async def _synchronize_expressions(self):
-        logger.info("Checking for expression updates from VTube Studio...")
-        try:
-            hotkey_list_response = await self.vts_agent.get_hotkey_list()
-            if hotkey_list_response and 'data' in hotkey_list_response and 'availableHotkeys' in hotkey_list_response['data']:
-                vts_expressions = [h for h in hotkey_list_response['data']['availableHotkeys'] if h.get('type') == 'ToggleExpression']
-
-                yaml_expressions = self.config.get('expressions', {})
-                new_yaml_expressions = {}
-                updated = False
-
-                # Map VTS hotkey IDs to their file names for quick lookup
-                file_to_hotkey_id_map = {exp.get('file'): exp.get('hotkeyID') for exp in vts_expressions}
-
-                for exp in vts_expressions:
-                    exp_file = exp.get('file')
-                    exp_name = exp.get('name')
-                    if not exp_file or not exp_name:
-                        continue
-
-                    if exp_file in yaml_expressions: # Existing expression
-                        # Preserve existing keywords and cooldown_s
-                        new_yaml_expressions[exp_file] = yaml_expressions[exp_file]
-                    else: # New expression from VTS
-                        placeholder_keyword = f"NEW_KEYWORD_{exp_name.replace(' ', '_')}"
-                        new_yaml_expressions[exp_file] = {
-                            'name': exp_name,
-                            'keywords': [placeholder_keyword],
-                            'cooldown_s': 60 # Default cooldown
-                        }
-                        updated = True
-
-                # Check for removed expressions (optional, but good practice)
-                if len(new_yaml_expressions) != len(yaml_expressions):
-                    updated = True
-
-                if updated:
-                    self.config['expressions'] = new_yaml_expressions
-                    with open(self.config_path, 'w') as f:
-                        yaml.dump(self.config, f, default_flow_style=False, allow_unicode=True)
-                    logger.info(f"Successfully updated '{self.config_path}' with the latest expressions.")
-
-                session_expression_map = {}
-                # Build the session_expression_map from the updated config
-                for exp_file, exp_data in new_yaml_expressions.items():
-                    hotkey_id = file_to_hotkey_id_map.get(exp_file)
-                    if hotkey_id:
-                        for keyword in exp_data.get('keywords', []):
-                            session_expression_map[keyword] = hotkey_id
-                        # Also add the VTS expression name as a keyword
-                        session_expression_map[exp_data['name']] = hotkey_id
-                
-                logger.info("Expression map created. Ready to detect keywords.")
-                return session_expression_map
-
-        except Exception as e:
-            logger.error(f"Failed to auto-update expressions: {e}")
-        return {}
+            await self.set_language(self.current_language) # Set default language
 
     async def run(self):
         await self._initialize_components()
@@ -227,3 +189,6 @@ class ApplicationCore:
                     task.cancel()
             if self.vts_agent:
                 await self.vts_agent.disconnect()
+
+    async def _synchronize_expressions(self):
+        logger.info("Checking for expression updates from VTube Studio...")

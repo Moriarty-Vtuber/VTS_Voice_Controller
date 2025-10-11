@@ -57,6 +57,18 @@ class ASRProcessor(InputProcessor):
         self.vad_frame_duration_ms = vad_frame_duration_ms
         self.vad_frame_size = int(self.SAMPLE_RATE * self.vad_frame_duration_ms / 1000)
         self.vad_buffer = b'' # Buffer for VAD frames
+        self.running = True
+        self.audio_processing_task = None
+
+    async def stop(self):
+        self.running = False
+        if self.audio_processing_task:
+            self.audio_processing_task.cancel()
+            try:
+                await self.audio_processing_task
+            except asyncio.CancelledError:
+                pass # Expected
+        logger.info("ASRProcessor stopped.")
 
     def _create_recognizer(self):
         return sherpa_onnx.OnlineRecognizer.from_transducer(
@@ -135,7 +147,7 @@ class ASRProcessor(InputProcessor):
             asyncio.run_coroutine_threadsafe(self._audio_callback(indata, frames, time, status), loop)
 
         async def process_audio_buffer_periodically():
-            while True:
+            while self.running:
                 await asyncio.sleep(0.05)  # Process buffer every 0.05 seconds (50ms)
                 async with self.buffer_lock:
                     if self.audio_buffer.size > 0:
@@ -146,7 +158,7 @@ class ASRProcessor(InputProcessor):
                         self.audio_buffer = np.array([], dtype=np.float32)  # Clear the buffer
                         await self.event_bus.publish("asr_status_update", "Listening")
 
-        audio_processing_task = asyncio.create_task(process_audio_buffer_periodically())
+        self.audio_processing_task = asyncio.create_task(process_audio_buffer_periodically())
 
         try:
             # blocksize should be a multiple of VAD frame size
@@ -155,9 +167,10 @@ class ASRProcessor(InputProcessor):
                                  channels=1, dtype='float32', samplerate=self.SAMPLE_RATE, blocksize=blocksize):
                 logger.info("Microphone stream started. Say something!")
                 await self.event_bus.publish("asr_ready", True)
-                await audio_processing_task
+                await self.audio_processing_task
         except Exception as e:
             logger.error(f"An error occurred during audio streaming: {e}")
             await self.event_bus.publish("asr_status_update", "Error")
-            audio_processing_task.cancel()
+            if self.audio_processing_task:
+                self.audio_processing_task.cancel()
             raise

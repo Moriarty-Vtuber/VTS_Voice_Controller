@@ -33,7 +33,6 @@ class MainWindow(QMainWindow):
         self.language_selector = QComboBox()
         if self.translations:
             self.language_selector.addItems(self.translations.keys())
-        self.language_selector.currentTextChanged.connect(self.retranslate_ui)
         top_layout.addWidget(self.language_label)
         top_layout.addWidget(self.language_selector)
         top_layout.addStretch()
