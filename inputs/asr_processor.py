@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sounddevice as sd
 import numpy as np
 import sherpa_onnx
@@ -13,23 +14,19 @@ class ASRProcessor(InputProcessor):
     def __init__(
         self,
         event_bus: EventBus,
-        tokens_path: str,
-        encoder_path: str,
-        decoder_path: str,
-        joiner_path: str,
+        model_config: dict,
+        model_dir: str,
         decoding_method: str = "greedy_search",
         debug: bool = False,
         sample_rate: int = 16000,
         provider: str = "cpu",
-        vad_aggressiveness: int = 3, # 0 (least aggressive) to 3 (most aggressive)
-        vad_frame_duration_ms: int = 30, # 10, 20, or 30
-        recognition_mode: str = "fast", # "fast" or "accurate"
+        vad_aggressiveness: int = 3,
+        vad_frame_duration_ms: int = 30,
+        recognition_mode: str = "fast",
     ) -> None:
         self.event_bus = event_bus
-        self.tokens_path = tokens_path
-        self.encoder_path = encoder_path
-        self.decoder_path = decoder_path
-        self.joiner_path = joiner_path
+        self.model_config = model_config
+        self.model_dir = model_dir
         self.decoding_method = decoding_method
         self.debug = debug
         self.SAMPLE_RATE = sample_rate
@@ -60,31 +57,33 @@ class ASRProcessor(InputProcessor):
         self.running = True
         self.audio_processing_task = None
 
-    async def stop(self):
-        self.running = False
-        if self.audio_processing_task:
-            self.audio_processing_task.cancel()
-            try:
-                await self.audio_processing_task
-            except asyncio.CancelledError:
-                pass # Expected
-        logger.info("ASRProcessor stopped.")
-
     def _create_recognizer(self):
-        return sherpa_onnx.OnlineRecognizer.from_transducer(
-            tokens=self.tokens_path,
-            encoder=self.encoder_path,
-            decoder=self.decoder_path,
-            joiner=self.joiner_path,
-            num_threads=1,
-            sample_rate=self.SAMPLE_RATE,
-            feature_dim=80,
-            enable_endpoint_detection=True,
-            decoding_method=self.decoding_method,
-            provider=self.provider,
-            debug=self.debug,
-            rule3_min_utterance_length=3.0, # Encourage faster partial results
-        )
+        model_type = self.model_config.get("model_type", "transducer")
+        params = self.model_config["params"]
+        logger.info(f"Creating recognizer of type '{model_type}'")
+
+        if model_type == "transducer":
+            return sherpa_onnx.OnlineRecognizer.from_transducer(
+                tokens=os.path.join(self.model_dir, params["tokens"]),
+                encoder=os.path.join(self.model_dir, params["encoder"]),
+                decoder=os.path.join(self.model_dir, params["decoder"]),
+                joiner=os.path.join(self.model_dir, params["joiner"]),
+                num_threads=1,
+                sample_rate=self.SAMPLE_RATE,
+                feature_dim=80,
+                enable_endpoint_detection=True,
+                decoding_method=self.decoding_method,
+                provider=self.provider,
+                debug=self.debug,
+                rule3_min_utterance_length=3.0,
+            )
+        elif model_type == "sense-voice":
+            # This is a placeholder. The Sense-Voice model has a different structure
+            # and likely requires a different factory method or configuration which is not
+            # clearly documented for this version. Raising a clear error is safer than crashing.
+            raise NotImplementedError(f"The '{model_type}' model type is not yet supported by the ASRProcessor.")
+        else:
+            raise ValueError(f"Unsupported model_type: {model_type}")
 
     def _transcribe_np(self, audio: np.ndarray) -> str:
         self.stream.accept_waveform(self.SAMPLE_RATE, audio)
@@ -93,7 +92,7 @@ class ASRProcessor(InputProcessor):
 
         if self.recognition_mode == "fast":
             result = self.recognizer.get_result(self.stream)
-            text = result.text.strip() if hasattr(result, 'text') else result.strip()
+            text = result.strip()
 
             text_to_return = ""
             if text and text != self.last_text:
@@ -110,7 +109,7 @@ class ASRProcessor(InputProcessor):
             text_to_return = ""
             if self.recognizer.is_endpoint(self.stream):
                 result = self.recognizer.get_result(self.stream)
-                text_to_return = result.text.strip() if hasattr(result, 'text') else result.strip()
+                text_to_return = result.strip()
                 self.recognizer.reset(self.stream)
             
             return text_to_return

@@ -108,13 +108,10 @@ class ApplicationCore:
         if self.input_processor and hasattr(self.input_processor, 'stop'):
             await self.input_processor.stop()
 
-        params = selected_model["params"]
         self.input_processor = ASRProcessor(
             event_bus=self.event_bus,
-            tokens_path=os.path.join(actual_model_dir, params["tokens"]),
-            encoder_path=os.path.join(actual_model_dir, params["encoder"]),
-            decoder_path=os.path.join(actual_model_dir, params["decoder"]),
-            joiner_path=os.path.join(actual_model_dir, params["joiner"]),
+            model_config=selected_model,
+            model_dir=actual_model_dir,
             provider="cpu", # Defaulting to CPU
             recognition_mode=self.recognition_mode,
         )
@@ -164,7 +161,6 @@ class ApplicationCore:
         
         tasks = [
             asyncio.create_task(self.intent_resolver.resolve_intent()),
-            asyncio.create_task(self.vts_agent.run()),
             asyncio.create_task(self.input_processor.process_input()),
         ]
 
@@ -192,3 +188,67 @@ class ApplicationCore:
 
     async def _synchronize_expressions(self):
         logger.info("Checking for expression updates from VTube Studio...")
+        try:
+            hotkey_list_response = await self.vts_agent.get_hotkey_list()
+            logger.debug(f"VTS hotkey response: {hotkey_list_response}")
+
+            if hotkey_list_response and 'data' in hotkey_list_response and 'availableHotkeys' in hotkey_list_response['data']:
+                vts_expressions = [h for h in hotkey_list_response['data']['availableHotkeys'] if h.get('type') == 'ToggleExpression']
+                logger.debug(f"Found {len(vts_expressions)} ToggleExpression hotkeys in VTS.")
+
+                yaml_expressions = self.config.get('expressions', {})
+                if not yaml_expressions:
+                    logger.warning("No expressions found in vts_config.yaml")
+                
+                new_yaml_expressions = {}
+                updated = False
+
+                file_to_hotkey_id_map = {exp.get('file'): exp.get('hotkeyID') for exp in vts_expressions}
+
+                for exp in vts_expressions:
+                    exp_file = exp.get('file')
+                    exp_name = exp.get('name')
+                    if not exp_file or not exp_name:
+                        continue
+
+                    if exp_file in yaml_expressions:
+                        new_yaml_expressions[exp_file] = yaml_expressions[exp_file]
+                    else:
+                        placeholder_keyword = f"NEW_KEYWORD_{exp_name.replace(' ', '_')}"
+                        new_yaml_expressions[exp_file] = {
+                            'name': exp_name,
+                            'keywords': [placeholder_keyword],
+                            'cooldown_s': 60
+                        }
+                        updated = True
+
+                if len(new_yaml_expressions) != len(yaml_expressions):
+                    updated = True
+
+                if updated:
+                    self.config['expressions'] = new_yaml_expressions
+                    with open(self.config_path, 'w') as f:
+                        yaml.dump(self.config, f, default_flow_style=False, allow_unicode=True)
+                    logger.info(f"Successfully updated '{self.config_path}' with the latest expressions.")
+
+                logger.debug(f"Building session map from expressions: {new_yaml_expressions}")
+                session_expression_map = {}
+                for exp_file, exp_data in new_yaml_expressions.items():
+                    hotkey_id = file_to_hotkey_id_map.get(exp_file)
+                    if hotkey_id:
+                        cooldown = exp_data.get('cooldown_s', 60)
+                        trigger_data = {"hotkeyID": hotkey_id, "cooldown_s": cooldown}
+                        for keyword in exp_data.get('keywords', []):
+                            session_expression_map[keyword] = trigger_data
+                        session_expression_map[exp_data['name']] = trigger_data
+                
+                logger.info(f"Expression map created with {len(session_expression_map)} keywords. Ready to detect keywords.")
+                return session_expression_map
+            else:
+                logger.warning("Received no or malformed hotkey data from VTube Studio.")
+
+        except Exception as e:
+            logger.error(f"Failed to auto-update expressions: {e}")
+        
+        logger.error("Expression synchronization failed. Returning empty map.")
+        return {}

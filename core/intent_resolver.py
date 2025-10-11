@@ -21,8 +21,11 @@ class KeywordIntentResolver(IntentResolver):
         logger.info(f"Transcribed: {transcribed_text}")
         lower_transcribed_text = transcribed_text.lower()
 
-        for keyword, hotkey_id in self.expression_map.items():
+        for keyword, trigger_data in self.expression_map.items():
             if keyword.lower() in lower_transcribed_text:
+                hotkey_id = trigger_data["hotkeyID"]
+                cooldown_duration = trigger_data["cooldown_s"]
+
                 if hotkey_id in self.expression_cooldowns and time.time() < self.expression_cooldowns[hotkey_id]:
                     remaining = self.expression_cooldowns[hotkey_id] - time.time()
                     logger.info(f"Keyword '{keyword}' detected, but expression {hotkey_id} is on cooldown for {remaining:.1f} more seconds.")
@@ -35,13 +38,11 @@ class KeywordIntentResolver(IntentResolver):
                     self.consecutive_trigger_count = 1
 
                 if self.consecutive_trigger_count == 2:
-                    cooldown_duration = 60
                     self.expression_cooldowns[hotkey_id] = time.time() + cooldown_duration
                     logger.warning(f"Expression {hotkey_id} triggered twice consecutively. Placing on cooldown for {cooldown_duration} seconds.")
 
                 logger.info(f"Keyword '{keyword}' detected. Triggering expression: {hotkey_id}")
                 await self.event_bus.publish("hotkey_triggered", hotkey_id)
-                break
 
     async def resolve_intent(self):
         transcription_queue = await self.event_bus.subscribe("transcription_received")

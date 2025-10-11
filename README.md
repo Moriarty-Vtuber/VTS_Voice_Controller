@@ -19,7 +19,7 @@ This project uses an asynchronous, event-driven architecture. The main component
 
 | Component                  | Technology / Library | Key File(s)                               | Description                                                                                             |
 | -------------------------- | -------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| **VTS Communication**      | `pyvts`              | `vts_client.py`                           | Handles all communication with the VTube Studio API, including connection, authentication, and hotkey requests. Uses `asyncio.Lock` to prevent API request race conditions. |
+| **VTS Communication**      | [`pyvts`](https://github.com/Genteki/pyvts) | `vts_client.py`                           | Handles all communication with the VTube Studio API, including connection, authentication, and hotkey requests. Uses `asyncio.Lock` to prevent API request race conditions. |
 | **Voice Recognition (ASR)**| `sherpa-onnx`        | `voice_engine/recognizer.py`              | A wrapper for the `sherpa-onnx` real-time speech-to-text engine. It processes audio data and returns transcribed text. |
 | **Audio Input**            | `sounddevice`        | `vts_main.py`                             | Captures live audio from the default microphone into a buffer for processing.                                   |
 | **Configuration**          | `pyyaml`             | `vts_config.yaml`, `vts_main.py`          | Manages application settings, including VTS connection details and keyword-to-expression mappings.      |

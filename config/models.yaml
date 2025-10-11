@@ -1,7 +1,7 @@
 # This file maps languages to their corresponding sherpa-onnx models.
-# It uses the transducer-based models that are already present and correctly formatted.
 
 en:
+  model_type: "transducer"
   model_name: "sherpa-onnx-streaming-zipformer-en-20M-2023-02-17"
   url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-en-20M-2023-02-17.tar.bz2"
   params:
@@ -10,7 +10,18 @@ en:
     joiner: "joiner-epoch-99-avg-1.int8.onnx"
     tokens: "tokens.txt"
 
-zh_Hant:
+ja:
+  model_type: "transducer"
+  model_name: "sherpa-onnx-zipformer-ja-reazonspeech-2024-08-01"
+  url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-zipformer-ja-reazonspeech-2024-08-01.tar.bz2"
+  params:
+    encoder: "encoder-epoch-99-avg-1.int8.onnx"
+    decoder: "decoder-epoch-99-avg-1.int8.onnx"
+    joiner: "joiner-epoch-99-avg-1.int8.onnx"
+    tokens: "tokens.txt"
+
+zh_hant:
+  model_type: "transducer"
   model_name: "sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20"
   url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20.tar.bz2"
   params:

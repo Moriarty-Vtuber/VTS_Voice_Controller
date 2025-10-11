@@ -26,7 +26,7 @@ ja:
   header_keywords: "キーワード"
   header_cooldown: "クールダウン (秒)"
 
-zh_Hant:
+zh_hant:
   window_title: "VTS 語音控制器"
   status_label: "狀態:"
   status_disconnected: "已斷線"

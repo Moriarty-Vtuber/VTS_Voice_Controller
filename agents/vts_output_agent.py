@@ -40,6 +40,7 @@ class VTSWebSocketAgent(VTSOutputAgent):
                     await self.event_bus.publish("vts_status_update", "Connection Failed")
                     raise
 
+
     async def authenticate(self):
         """Authenticate with VTube Studio."""
         try:
@@ -92,7 +93,9 @@ class VTSWebSocketAgent(VTSOutputAgent):
     async def run(self):
         """Listen for hotkey trigger events on the event bus."""
         trigger_queue = await self.event_bus.subscribe("hotkey_triggered")
+        logger.info("VTS agent is listening for hotkey triggers.")
         while True:
             event = await trigger_queue.get()
+            logger.debug(f"VTS agent received trigger event for hotkey: {event.payload}")
             await self.trigger_hotkey(event.payload)
             trigger_queue.task_done()
