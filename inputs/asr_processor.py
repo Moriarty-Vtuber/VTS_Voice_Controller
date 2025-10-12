@@ -92,7 +92,7 @@ class ASRProcessor(InputProcessor):
 
         if self.recognition_mode == "fast":
             result = self.recognizer.get_result(self.stream)
-            text = result.text.strip()
+            text = result.strip()
 
             text_to_return = ""
             if text and text != self.last_text:
@@ -109,7 +109,7 @@ class ASRProcessor(InputProcessor):
             text_to_return = ""
             if self.recognizer.is_endpoint(self.stream):
                 result = self.recognizer.get_result(self.stream)
-                text_to_return = result.text.strip()
+                text_to_return = result.strip()
                 self.recognizer.reset(self.stream)
             
             return text_to_return
