@@ -92,7 +92,7 @@ class ASRProcessor(InputProcessor):
 
         if self.recognition_mode == "fast":
             result = self.recognizer.get_result(self.stream)
-            text = result.strip()
+            text = result.text.strip()
 
             text_to_return = ""
             if text and text != self.last_text:
@@ -109,7 +109,7 @@ class ASRProcessor(InputProcessor):
             text_to_return = ""
             if self.recognizer.is_endpoint(self.stream):
                 result = self.recognizer.get_result(self.stream)
-                text_to_return = result.strip()
+                text_to_return = result.text.strip()
                 self.recognizer.reset(self.stream)
             
             return text_to_return
@@ -153,6 +153,7 @@ class ASRProcessor(InputProcessor):
                         await self.event_bus.publish("asr_status_update", "Transcribing")
                         transcribed_text = self._transcribe_np(self.audio_buffer)
                         if transcribed_text:
+                            logger.debug(f"ASR transcribed text: {transcribed_text}")
                             await self.event_bus.publish("transcription_received", transcribed_text)
                         self.audio_buffer = np.array([], dtype=np.float32)  # Clear the buffer
                         await self.event_bus.publish("asr_status_update", "Listening")
