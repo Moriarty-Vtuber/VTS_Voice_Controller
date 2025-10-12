@@ -160,6 +160,7 @@ class ApplicationCore:
         logger.info("Starting application components...")
         
         tasks = [
+            asyncio.create_task(self.vts_agent.run()),
             asyncio.create_task(self.intent_resolver.resolve_intent()),
             asyncio.create_task(self.input_processor.process_input()),
         ]

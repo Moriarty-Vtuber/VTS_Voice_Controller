@@ -15,7 +15,11 @@ class KeywordIntentResolver(IntentResolver):
         self.expression_cooldowns = {}
 
     async def _process_one_event(self, transcribed_text: str):
-        if not transcribed_text:
+        logger.debug(f"Intent resolver received: {transcribed_text}")
+
+        if not isinstance(transcribed_text, str) or not transcribed_text:
+            if transcribed_text:
+                logger.warning(f"KeywordIntentResolver received non-string payload: {type(transcribed_text)} - {transcribed_text}")
             return
 
         logger.info(f"Transcribed: {transcribed_text}")

@@ -2,6 +2,7 @@
 import asyncio
 from dataclasses import dataclass, field
 from typing import Any
+from loguru import logger
 
 @dataclass
 class Event:
@@ -18,6 +19,7 @@ class EventBus:
         return self._queues[event_type]
 
     async def publish(self, event_type: str, payload: Any):
+        logger.debug(f"Publishing event '{event_type}' with payload: {payload}")
         event = Event(event_type=event_type, payload=payload)
         if event_type in self._queues:
             await self._queues[event_type].put(event)

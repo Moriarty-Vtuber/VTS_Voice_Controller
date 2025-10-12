@@ -11,7 +11,9 @@ class TestIntentResolver(unittest.TestCase):
     def test_resolve_intent(self):
         async def run_test():
             event_bus = EventBus()
-            expression_map = {"hello": "hotkey_1"}
+            expression_map = {
+                "hello": {"hotkeyID": "hotkey_1", "cooldown_s": 10}
+            }
             intent_resolver = KeywordIntentResolver(event_bus, expression_map)
 
             # Get the queue for the hotkey_triggered event

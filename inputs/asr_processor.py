@@ -20,7 +20,7 @@ class ASRProcessor(InputProcessor):
         debug: bool = False,
         sample_rate: int = 16000,
         provider: str = "cpu",
-        vad_aggressiveness: int = 3,
+        vad_aggressiveness: int = 1,
         vad_frame_duration_ms: int = 30,
         recognition_mode: str = "fast",
     ) -> None:
@@ -128,6 +128,7 @@ class ASRProcessor(InputProcessor):
             self.vad_buffer = self.vad_buffer[self.vad_frame_size * 2:]
 
             is_speech = self.vad.is_speech(frame, self.SAMPLE_RATE)
+            logger.trace(f"VAD frame processed, is_speech: {is_speech}")
 
             if is_speech:
                 # If speech is detected, append to the ASR buffer
@@ -153,6 +154,7 @@ class ASRProcessor(InputProcessor):
                         await self.event_bus.publish("asr_status_update", "Transcribing")
                         transcribed_text = self._transcribe_np(self.audio_buffer)
                         if transcribed_text:
+                            logger.debug(f"ASR transcribed text: {transcribed_text}")
                             await self.event_bus.publish("transcription_received", transcribed_text)
                         self.audio_buffer = np.array([], dtype=np.float32)  # Clear the buffer
                         await self.event_bus.publish("asr_status_update", "Listening")
