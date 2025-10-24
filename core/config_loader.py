@@ -9,6 +9,22 @@ class ConfigLoader:
     """
 
     @staticmethod
+    def save_yaml(file_path: str, data: Dict[str, Any]):
+        """
+        Saves a dictionary to a YAML file.
+
+        Args:
+            file_path: The path to the YAML file.
+            data: The dictionary to save.
+        """
+        try:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                yaml.safe_dump(data, f, allow_unicode=True, sort_keys=False)
+            logger.info(f"Configuration saved to {file_path}")
+        except Exception as e:
+            logger.error(f"Error saving YAML file {file_path}: {e}")
+
+    @staticmethod
     def load_yaml(file_path: str) -> Dict[str, Any]:
         """
         Loads a YAML file and returns its content as a dictionary.

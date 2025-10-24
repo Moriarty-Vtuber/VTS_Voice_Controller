@@ -21,19 +21,24 @@ def load_initial_config():
 
 class AppUI:
     def __init__(self):
-        self.main_window = MainWindow()
         self.app_core_task = None
         self.current_language = "en"
+
+        # Initial UI setup
+        config_path = os.path.join(os.path.dirname(__file__), '..', 'vts_config.yaml')
+        initial_config = load_initial_config()
+        
+        self.main_window = MainWindow(config_path=config_path, initial_config=initial_config if initial_config is not None else {})
 
         # Connect signals
         self.main_window.start_button.clicked.connect(self._start_button_clicked)
         self.main_window.stop_button.clicked.connect(self._stop_button_clicked)
         self.main_window.language_selector.currentTextChanged.connect(self._language_changed)
 
-        # Initial UI setup
-        initial_config = load_initial_config()
         if initial_config:
             self.main_window.populate_keyword_editor(initial_config.get('expressions', {}))
+        else:
+            logger.warning("Initial config not loaded, starting with empty expressions.")
         
         self.main_window.show()
 

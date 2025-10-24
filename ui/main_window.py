@@ -3,13 +3,17 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem, QLabel, QPushButton, QHeaderView, QComboBox, QGridLayout, QFrame
 )
 from PyQt6.QtGui import QIcon, QFont
+from loguru import logger
 from PyQt6.QtCore import Qt, QSize
 import os
 from core.config_loader import ConfigLoader
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, config_path: str, initial_config: dict):
         super().__init__()
+
+        self.config_path = config_path
+        self.initial_config = initial_config
 
         self.translations = self._load_translations()
         self._load_stylesheet()
@@ -81,8 +85,13 @@ class MainWindow(QMainWindow):
         self.stop_button = QPushButton()
         self.stop_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), 'static', 'icons', 'stop.svg')))
         self.stop_button.setEnabled(False)
+        self.save_button = QPushButton()
+        self.save_button.setIcon(QIcon(os.path.join(os.path.dirname(__file__), 'static', 'icons', 'save.svg'))) # Assuming a save.svg icon exists or will be created
+        self.save_button.clicked.connect(self._save_keywords_to_config)
+        
         controls_layout.addWidget(self.start_button)
         controls_layout.addWidget(self.stop_button)
+        controls_layout.addWidget(self.save_button) # Add save button
         controls_layout.addStretch()
         grid_layout.addWidget(controls_frame, 2, 0, 1, 2)
 
@@ -125,6 +134,45 @@ class MainWindow(QMainWindow):
         if vts: self.vts_status_label.setText(f"VTS: {vts}")
         if asr: self.asr_status_label.setText(f"ASR: {asr}")
         if app: self.app_status_label.setText(f"App: {app}")
+
+    def _save_keywords_to_config(self):
+        logger.info("--- UI: Save button clicked ---")
+        updated_expressions = {}
+        for row in range(self.keyword_editor.rowCount()):
+            expression_name = self.keyword_editor.item(row, 0).text()
+            keywords_str = self.keyword_editor.item(row, 1).text()
+            cooldown_str = self.keyword_editor.item(row, 2).text()
+
+            keywords = [k.strip() for k in keywords_str.split(',') if k.strip()]
+            cooldown_s = int(cooldown_str) if cooldown_str.isdigit() else 0 # Default to 0 if not a valid number
+
+            # Find the original expression key (exp_file) from the initial config
+            # This assumes expression names are unique and match the 'name' field in config
+            original_key = None
+            for k, v in self.initial_config.get('expressions', {}).items():
+                if v.get('name') == expression_name:
+                    original_key = k
+                    break
+            
+            if original_key:
+                updated_expressions[original_key] = {
+                    'name': expression_name,
+                    'keywords': keywords,
+                    'cooldown_s': cooldown_s
+                }
+            else:
+                logger.warning(f"Could not find original key for expression: {expression_name}")
+
+        # Load the current config to preserve other settings
+        current_config = ConfigLoader.load_yaml(self.config_path)
+        if current_config:
+            current_config['expressions'] = updated_expressions
+            ConfigLoader.save_yaml(self.config_path, current_config)
+            logger.info("Keywords saved to vts_config.yaml")
+            self.append_log("Keywords saved successfully!")
+        else:
+            logger.error("Failed to load current config for saving.")
+            self.append_log("Error: Failed to save keywords.")
 
     def populate_keyword_editor(self, expressions: dict):
         self.keyword_editor.setRowCount(len(expressions))
