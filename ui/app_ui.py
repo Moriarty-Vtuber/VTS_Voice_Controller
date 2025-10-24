@@ -1,6 +1,7 @@
 import asyncio
 import sys
 import yaml
+import os
 from loguru import logger
 
 from PyQt6.QtWidgets import QApplication
@@ -10,7 +11,9 @@ from core.application_core import ApplicationCore
 
 def load_initial_config():
     try:
-        with open("vts_config.yaml", 'r') as f:
+        # Go up one level from the current file's directory to the project root
+        config_path = os.path.join(os.path.dirname(__file__), '..', 'vts_config.yaml')
+        with open(config_path, 'r') as f:
             return yaml.safe_load(f)
     except Exception as e:
         logger.error(f"Failed to load initial config: {e}")
@@ -56,8 +59,9 @@ class AppUI:
         self.main_window.stop_button.setEnabled(True)
 
         recognition_mode = self.main_window.mode_selector.currentText()
+        config_path = os.path.join(os.path.dirname(__file__), '..', 'vts_config.yaml')
         app_core = ApplicationCore(
-            config_path="vts_config.yaml",
+            config_path=config_path,
             recognition_mode=recognition_mode,
             language=self.current_language
         )
