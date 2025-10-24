@@ -43,6 +43,8 @@ The application features an automatic synchronization system that fetches availa
 
 ## Development Setup
 
+**IMPORTANT:** To ensure a clean and isolated environment, it is **highly recommended** to use a Python virtual environment (`venv`) for all development and execution. This prevents conflicts and ensures that all dependencies are managed on a per-project basis.
+
 To ensure a clean and isolated environment, it is highly recommended to use a Python virtual environment (`venv`).
 
 1.  **Create a Virtual Environment:**
@@ -84,3 +86,7 @@ To ensure a clean and isolated environment, it is highly recommended to use a Py
 4.  **Configure Keywords:**
     - Open `vts_config.yaml`.
     - Change the placeholder keywords (e.g., `NEW_KEYWORD_MyExpression`) to the voice commands you want to use.
+
+# NEVER PIP INSTALL IN ROOT PIP ENV
+# ALWAYS DO ANY ENV MODIFICATION IN VENV
+# RUN run.bat BY YOURSELF ALWAYS BEFORE REPORT COMPLETE RESULT TO USER
