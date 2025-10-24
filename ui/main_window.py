@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
 
         self.mode_label = QLabel()
         self.mode_selector = QComboBox()
-        self.mode_selector.addItems(["fast", "accurate"])
+        self.mode_selector.addItems([self.tr("mode_fast"), self.tr("mode_accurate")]) # Use tr() for translatable modes
 
         settings_layout.addWidget(self.language_label)
         settings_layout.addWidget(self.language_selector)
@@ -69,8 +69,11 @@ class MainWindow(QMainWindow):
         status_frame.setObjectName("statusFrame")
         status_layout = QHBoxLayout(status_frame)
         self.vts_status_label = QLabel()
+        self.vts_status_label.setObjectName("vtsStatusLabel")
         self.asr_status_label = QLabel()
+        self.asr_status_label.setObjectName("asrStatusLabel")
         self.app_status_label = QLabel()
+        self.app_status_label.setObjectName("appStatusLabel")
         status_layout.addWidget(self.vts_status_label)
         status_layout.addWidget(self.asr_status_label)
         status_layout.addWidget(self.app_status_label)
@@ -123,6 +126,9 @@ class MainWindow(QMainWindow):
             tr("header_keywords", "Keywords"), 
             tr("header_cooldown", "Cooldown (s)")
         ])
+        self.keyword_editor.horizontalHeaderItem(0).setToolTip(tr("tooltip_expression_name", "The name of the expression in VTube Studio."))
+        self.keyword_editor.horizontalHeaderItem(1).setToolTip(tr("tooltip_keywords", "Comma-separated list of keywords that will trigger this expression."))
+        self.keyword_editor.horizontalHeaderItem(2).setToolTip(tr("tooltip_cooldown", "Cooldown period in seconds after the expression is triggered."))
         self.language_label.setText(tr("language_label", "Language:"))
         self.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), 'static', 'icons', 'app_icon.svg')))
 
@@ -169,10 +175,10 @@ class MainWindow(QMainWindow):
             current_config['expressions'] = updated_expressions
             ConfigLoader.save_yaml(self.config_path, current_config)
             logger.info("Keywords saved to vts_config.yaml")
-            self.append_log("Keywords saved successfully!")
+            self.append_log(self.tr("keywords_saved_success", "Keywords saved successfully!"))
         else:
             logger.error("Failed to load current config for saving.")
-            self.append_log("Error: Failed to save keywords.")
+            self.append_log(self.tr("keywords_save_error", "Error: Failed to save keywords."))
 
     def populate_keyword_editor(self, expressions: dict):
         self.keyword_editor.setRowCount(len(expressions))
