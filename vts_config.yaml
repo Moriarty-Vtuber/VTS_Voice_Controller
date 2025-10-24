@@ -1,9 +1,24 @@
 expressions:
-  test.exp3.json:
+  EyesCry.exp3.json:
     cooldown_s: 60
     keywords:
-    - NEW_KEYWORD_test_expression
-    name: test_expression
+    - NEW_KEYWORD_Eyes_Cry
+    name: Eyes Cry
+  EyesLove.exp3.json:
+    cooldown_s: 60
+    keywords:
+    - NEW_KEYWORD_Heart_Eyes
+    name: Heart Eyes
+  Shock.exp3.json:
+    cooldown_s: 60
+    keywords:
+    - NEW_KEYWORD_Shock
+    name: Shock
+  SignAngry.exp3.json:
+    cooldown_s: 60
+    keywords:
+    - NEW_KEYWORD_Angry
+    name: Angry
 vts_settings:
   host: 127.0.0.1
   port: 8001
