@@ -9,8 +9,9 @@ from core.event_bus import EventBus
 from agents.vts_output_agent import VTSWebSocketAgent
 from core.intent_resolver import KeywordIntentResolver
 from inputs.test_input_processor import TestInputProcessor
-from inputs.asr_processor import ASRProcessor
-from inputs.utils.utils import ensure_model_downloaded_and_extracted
+from inputs.asr_processor import SherpaOnnxASRProcessor # Import the specific implementation
+from core.interfaces import ASRProcessor # Import the interface
+from core.config_loader import ConfigLoader # Import ConfigLoader
 
 class ApplicationCore:
     def __init__(self, config_path: str, test_mode: bool = False, recognition_mode: str = "fast", language: str = "en"):
@@ -18,52 +19,16 @@ class ApplicationCore:
         self.test_mode = test_mode
         self.recognition_mode = recognition_mode
         self.event_bus = EventBus()
-        self.config = self._load_config()
+        self.config = ConfigLoader.load_yaml(config_path) # Use ConfigLoader
         self.models_config = self._load_models_config()
         self.vts_agent = None
         self.intent_resolver = None
-        self.input_processor = None
+        self.input_processor: ASRProcessor = None # Type hint for clarity
         self.current_language = language
 
     def _load_config(self):
-        if getattr(sys, 'frozen', False):
-            base_path = os.path.dirname(sys.executable)
-        else:
-            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-        config_path = os.path.join(base_path, self.config_path)
-
-        if not os.path.exists(config_path):
-            logger.warning(f"Configuration file not found at {config_path}. Creating a default one.")
-            default_config = {
-                'vts_settings': {
-                    'host': '127.0.0.1',
-                    'port': 8001,
-                    'token_file': os.path.join(base_path, 'vts_token.txt')
-                },
-                'expressions': {
-                    'DefaultExpression.exp3.json': {
-                        'name': 'DefaultExpression',
-                        'keywords': ['hello'],
-                        'cooldown_s': 60
-                    }
-                }
-            }
-            try:
-                with open(config_path, 'w') as f:
-                    yaml.safe_dump(default_config, f, default_flow_style=False, allow_unicode=True)
-                logger.info("Default configuration created.")
-                return default_config
-            except Exception as e:
-                logger.error(f"Error creating default configuration: {e}")
-                return None
-        else:
-            try:
-                with open(config_path, 'r') as f:
-                    return yaml.safe_load(f)
-            except Exception as e:
-                logger.error(f"Error loading configuration from {config_path}: {e}")
-                return None
+        # This method is no longer needed as ConfigLoader.load_yaml is used directly in __init__
+        pass
 
     def _load_models_config(self):
         if getattr(sys, 'frozen', False):
@@ -71,12 +36,7 @@ class ApplicationCore:
         else:
             base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         models_config_path = os.path.join(base_path, 'config', 'models.yaml')
-        try:
-            with open(models_config_path, 'r') as f:
-                return yaml.safe_load(f)
-        except Exception as e:
-            logger.error(f"Error loading models configuration from {models_config_path}: {e}")
-            return None
+        return ConfigLoader.load_yaml(models_config_path) # Use ConfigLoader
 
     async def set_language(self, language: str):
         if not self.models_config:
@@ -86,35 +46,21 @@ class ApplicationCore:
         self.current_language = language
         logger.info(f"Attempting to set ASR language to: {language}")
 
-        selected_model = self.models_config.get(language.lower())
-        if not selected_model:
+        selected_model_config = self.models_config.get(language.lower())
+        if not selected_model_config:
             logger.error(f"Language '{language}' not supported in models.yaml. Please check the config.")
             return
 
-        model_url = selected_model["url"]
+        model_url = selected_model_config["url"]
         if getattr(sys, 'frozen', False):
             base_path = os.path.dirname(sys.executable)
         else:
             base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         model_base_dir = os.path.join(base_path, "models")
-        
-        try:
-            actual_model_dir = ensure_model_downloaded_and_extracted(model_url, model_base_dir)
-        except Exception as e:
-            logger.error(f"Failed to prepare model for language {language}: {e}")
-            return
 
-        # Stop existing input processor if it's running
-        if self.input_processor and hasattr(self.input_processor, 'stop'):
-            await self.input_processor.stop()
-
-        self.input_processor = ASRProcessor(
-            event_bus=self.event_bus,
-            model_config=selected_model,
-            model_dir=actual_model_dir,
-            provider="cpu", # Defaulting to CPU
-            recognition_mode=self.recognition_mode,
-        )
+        # Instantiate the correct ASR processor based on configuration (currently only SherpaOnnxASRProcessor)
+        self.input_processor = SherpaOnnxASRProcessor(event_bus=self.event_bus)
+        await self.input_processor.initialize(config=selected_model_config, language=language, model_url=model_url, model_base_dir=model_base_dir)
         logger.info(f"Successfully initialized ASR for language: {language}")
 
     async def _initialize_components(self):
@@ -140,20 +86,22 @@ class ApplicationCore:
         if self.test_mode:
             logger.info("--- RUNNING IN TEST MODE ---")
             self.input_processor = TestInputProcessor(self.event_bus)
+            await self.input_processor.initialize(config={}, language="en") # Test processor doesn't need full config
         else:
             logger.info("--- RUNNING IN NORMAL MODE (MICROPHONE INPUT) ---")
-            await self.set_language(self.current_language) # Set default language
+            # The ASR processor is initialized in set_language, which is called here.
+            await self.set_language(self.current_language) 
 
     async def run(self):
+        logger.debug("ApplicationCore.run() entered.")
         await self._initialize_components()
         if not self.vts_agent or not self.intent_resolver:
             logger.error("Application cannot start due to initialization failure.")
             return
 
-        # If no input processor is available (i.e., not in test mode and ASR is disabled), exit gracefully.
         if not self.input_processor:
             logger.error("No input processor available. The application will now exit.")
-            logger.error("Run with the --test flag for testing, or resolve the onnxruntime issue to enable microphone input.")
+            logger.error("Run with the --test flag for testing, or ensure ASR is properly configured.")
             await self.vts_agent.disconnect()
             return
 
@@ -162,13 +110,15 @@ class ApplicationCore:
         tasks = [
             asyncio.create_task(self.vts_agent.run()),
             asyncio.create_task(self.intent_resolver.resolve_intent()),
-            asyncio.create_task(self.input_processor.process_input()),
+            asyncio.create_task(self._transcription_consumer()), # New task for consuming transcriptions
         ]
 
         # If in test mode, we need a way to stop the application
         if self.test_mode:
             async def test_shutdown_manager():
-                await asyncio.sleep(10) # Give ample time for the test event to fire and be processed
+                # In test mode, the TestInputProcessor yields once and stops.
+                # We wait for a short period to allow the event to propagate.
+                await asyncio.sleep(5) 
                 logger.warning("--- TEST COMPLETE: SHUTTING DOWN APPLICATION ---")
                 for task in tasks:
                     task.cancel()
@@ -181,11 +131,25 @@ class ApplicationCore:
         except KeyboardInterrupt:
             logger.info("Stopping application...")
         finally:
-            for task in asyncio.all_tasks():
-                if task is not asyncio.current_task():
-                    task.cancel()
             if self.vts_agent:
                 await self.vts_agent.disconnect()
+            if self.input_processor:
+                await self.input_processor.stop_listening()
+
+    async def _transcription_consumer(self):
+        """Consumes transcriptions from the ASR processor and publishes them to the event bus."""
+        if not self.input_processor:
+            logger.error("Transcription consumer started without an input processor.")
+            return
+        try:
+            async for transcription in self.input_processor.start_listening():
+                # The ASRProcessor now directly publishes transcription_received events
+                # So, ApplicationCore just needs to keep the listening task alive
+                pass # The actual event publishing is handled within ASRProcessor
+        except asyncio.CancelledError:
+            logger.info("Transcription consumer task cancelled.")
+        except Exception as e:
+            logger.error(f"Error in transcription consumer: {e}")
 
     async def _synchronize_expressions(self):
         logger.info("Checking for expression updates from VTube Studio...")
@@ -228,8 +192,7 @@ class ApplicationCore:
 
                 if updated:
                     self.config['expressions'] = new_yaml_expressions
-                    with open(self.config_path, 'w') as f:
-                        yaml.dump(self.config, f, default_flow_style=False, allow_unicode=True)
+                    ConfigLoader.save_yaml(self.config_path, self.config) # Use ConfigLoader.save_yaml
                     logger.info(f"Successfully updated '{self.config_path}' with the latest expressions.")
 
                 logger.debug(f"Building session map from expressions: {new_yaml_expressions}")

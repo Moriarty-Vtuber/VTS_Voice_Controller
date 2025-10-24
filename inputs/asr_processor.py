@@ -6,32 +6,52 @@ import sherpa_onnx
 from loguru import logger
 import onnxruntime
 import webrtcvad
+from collections import deque
+from typing import AsyncGenerator
 
-from core.interfaces import InputProcessor
+from core.interfaces import ASRProcessor
 from core.event_bus import EventBus
+from inputs.utils.utils import ensure_model_downloaded_and_extracted
 
-class ASRProcessor(InputProcessor):
-    def __init__(
-        self,
-        event_bus: EventBus,
-        model_config: dict,
-        model_dir: str,
-        decoding_method: str = "greedy_search",
-        debug: bool = False,
-        sample_rate: int = 16000,
-        provider: str = "cpu",
-        vad_aggressiveness: int = 1,
-        vad_frame_duration_ms: int = 30,
-        recognition_mode: str = "fast",
-    ) -> None:
+class SherpaOnnxASRProcessor(ASRProcessor):
+    def __init__(self, event_bus: EventBus):
         self.event_bus = event_bus
-        self.model_config = model_config
-        self.model_dir = model_dir
-        self.decoding_method = decoding_method
-        self.debug = debug
-        self.SAMPLE_RATE = sample_rate
-        self.provider = provider
-        self.recognition_mode = recognition_mode
+        self.recognizer = None
+        self.stream = None
+        self.audio_buffer = np.array([], dtype=np.float32)
+        self.buffer_lock = asyncio.Lock()
+        self.last_text = ""
+        self.running = False
+        self.audio_processing_task = None
+        self.transcription_queue = asyncio.Queue()
+        self.vad = None
+        self.vad_buffer = b''
+        self.vad_frame_size = 0
+        self.vad_frame_duration_ms = 0
+        self.SAMPLE_RATE = 16000
+        self.provider = "cpu"
+        self.recognition_mode = "fast"
+        self.model_dir = ""
+        self.model_config = {}
+        self.decoding_method = "greedy_search"
+        self.debug = False
+
+    async def initialize(self, config: dict, language: str, model_url: str, model_base_dir: str):
+        self.model_config = config
+        self.model_dir = os.path.join(model_base_dir, self.model_config.get("path", ""))
+        self.recognition_mode = config.get("recognition_mode", "fast")
+        self.provider = config.get("provider", "cpu")
+        self.decoding_method = config.get("decoding_method", "greedy_search")
+        self.debug = config.get("debug", False)
+        self.SAMPLE_RATE = self.model_config.get("sample_rate", 16000)
+        vad_aggressiveness = config.get("vad_aggressiveness", 1)
+        self.vad_frame_duration_ms = config.get("vad_frame_duration_ms", 30)
+
+        await self.event_bus.publish("asr_status_update", "Initializing")
+
+        # Ensure model is downloaded and extracted
+        actual_model_dir = ensure_model_downloaded_and_extracted(model_url, model_base_dir)
+        self.model_dir = actual_model_dir # Set the model_dir to the actual extracted directory
 
         if self.provider == "cuda":
             try:
@@ -45,17 +65,12 @@ class ASRProcessor(InputProcessor):
 
         self.recognizer = self._create_recognizer()
         self.stream = self.recognizer.create_stream()
-        self.audio_buffer = np.array([], dtype=np.float32)
-        self.buffer_lock = asyncio.Lock()
-        self.last_text = "" # For tracking partial results
-
+        
         # VAD initialization
         self.vad = webrtcvad.Vad(vad_aggressiveness)
-        self.vad_frame_duration_ms = vad_frame_duration_ms
         self.vad_frame_size = int(self.SAMPLE_RATE * self.vad_frame_duration_ms / 1000)
-        self.vad_buffer = b'' # Buffer for VAD frames
-        self.running = True
-        self.audio_processing_task = None
+        
+        await self.event_bus.publish("asr_status_update", "Ready")
 
     def _create_recognizer(self):
         model_type = self.model_config.get("model_type", "transducer")
@@ -78,9 +93,6 @@ class ASRProcessor(InputProcessor):
                 rule3_min_utterance_length=3.0,
             )
         elif model_type == "sense-voice":
-            # This is a placeholder. The Sense-Voice model has a different structure
-            # and likely requires a different factory method or configuration which is not
-            # clearly documented for this version. Raising a clear error is safer than crashing.
             raise NotImplementedError(f"The '{model_type}' model type is not yet supported by the ASRProcessor.")
         else:
             raise ValueError(f"Unsupported model_type: {model_type}")
@@ -133,12 +145,12 @@ class ASRProcessor(InputProcessor):
             if is_speech:
                 # If speech is detected, append to the ASR buffer
                 async with self.buffer_lock:
-                    # Convert back to float32 for ASR if needed, or handle directly if ASR accepts int16
                     # Sherpa-onnx expects float32, so convert back
                     float_frame = np.frombuffer(frame, dtype=np.int16).astype(np.float32) / 32767.0
                     self.audio_buffer = np.concatenate((self.audio_buffer, float_frame))
 
-    async def process_input(self):
+    async def start_listening(self) -> AsyncGenerator[str, None]:
+        self.running = True
         logger.info("Starting microphone stream...")
         await self.event_bus.publish("asr_status_update", "Listening")
         loop = asyncio.get_running_loop()
@@ -156,22 +168,48 @@ class ASRProcessor(InputProcessor):
                         if transcribed_text:
                             logger.debug(f"ASR transcribed text: {transcribed_text}")
                             await self.event_bus.publish("transcription_received", transcribed_text)
+                            await self.transcription_queue.put(transcribed_text) # Put into queue for get_transcription
                         self.audio_buffer = np.array([], dtype=np.float32)  # Clear the buffer
                         await self.event_bus.publish("asr_status_update", "Listening")
+            logger.info("Audio processing task stopped.")
 
         self.audio_processing_task = asyncio.create_task(process_audio_buffer_periodically())
 
         try:
-            # blocksize should be a multiple of VAD frame size
-            blocksize = self.vad_frame_size * 2 # Process two VAD frames at a time, for example
+            blocksize = self.vad_frame_size * 2
             with sd.InputStream(callback=sync_audio_callback,
                                  channels=1, dtype='float32', samplerate=self.SAMPLE_RATE, blocksize=blocksize):
                 logger.info("Microphone stream started. Say something!")
                 await self.event_bus.publish("asr_ready", True)
-                await self.audio_processing_task
+                while self.running:
+                    yield await self.transcription_queue.get()
+        except asyncio.CancelledError:
+            logger.info("Microphone stream cancelled.")
         except Exception as e:
             logger.error(f"An error occurred during audio streaming: {e}")
             await self.event_bus.publish("asr_status_update", "Error")
+            raise
+        finally:
             if self.audio_processing_task:
                 self.audio_processing_task.cancel()
-            raise
+            self.running = False
+            logger.info("Microphone stream stopped.")
+
+
+    async def stop_listening(self):
+        self.running = False
+        if self.audio_processing_task:
+            self.audio_processing_task.cancel()
+            try:
+                await self.audio_processing_task
+            except asyncio.CancelledError:
+                pass
+        logger.info("ASRProcessor stopped listening.")
+        await self.event_bus.publish("asr_status_update", "Stopped")
+
+    async def get_transcription(self) -> str:
+        # This method is designed to be called by an external consumer
+        # It will return the latest full transcription from the queue
+        if not self.transcription_queue.empty():
+            return await self.transcription_queue.get()
+        return ""

@@ -87,15 +87,17 @@ class AppUI:
         ]
 
         try:
+            logger.debug("Attempting to run app_core...")
             await app_core.run()
         except asyncio.CancelledError:
             logger.info("Application core task was cancelled by UI.")
-        except Exception as e:
-            logger.error(f"An error occurred in the application core: {e}")
-            self.main_window.append_log(f"[ERROR] {e}")
         finally:
             for task in listener_tasks:
                 task.cancel()
+                try:
+                    await task # Await cancellation to allow graceful cleanup
+                except asyncio.CancelledError:
+                    pass
             self.main_window.set_status(app="Stopped", vts="Disconnected", asr="Idle")
             self.main_window.start_button.setEnabled(True)
             self.main_window.mode_selector.setEnabled(True)
