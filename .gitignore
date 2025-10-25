@@ -1,5 +1,44 @@
-
-logs/
+# Python
 __pycache__/
-vts_token.txt
-models/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+.venv/
+venv/
+*.egg-info/
+.tox/
+.coverage
+.pytest_cache/
+htmlcov/
+.mypy_cache/
+.dmypy.json
+.ipynb_checkpoints
+profile_*.prof
+.vscode/
+
+# IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS generated files
+.DS_Store
+.Trashes
+Thumbs.db
+ehthumbs.db
+*.bak
+*.swp
+
+# Build artifacts
+dist/
+build/
+*.spec
+*.zip
+
+# VTS specific
+vts_controller.log
+vts_token.json
+models/emotion_model/

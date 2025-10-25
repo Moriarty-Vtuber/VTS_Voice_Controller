@@ -9,22 +9,24 @@ from core.event_bus import EventBus
 from agents.vts_output_agent import VTSWebSocketAgent
 from core.intent_resolver import KeywordIntentResolver
 from inputs.test_input_processor import TestInputProcessor
-from inputs.asr_processor import SherpaOnnxASRProcessor # Import the specific implementation
-from core.interfaces import ASRProcessor # Import the interface
-from core.config_loader import ConfigLoader # Import ConfigLoader
+from inputs.asr_processor import SherpaOnnxASRProcessor
+from inputs.emotion_detector import CnnEmotionDetector
+from core.interfaces import ASRProcessor, EmotionProcessor
+from core.config_loader import ConfigLoader
 
 class ApplicationCore:
-    def __init__(self, config_path: str, test_mode: bool = False, recognition_mode: str = "fast", language: str = "en"):
+    def __init__(self, config_path: str, test_mode: bool = False, recognition_mode: str = "fast", language: str = "en", input_type: str = "voice"):
         self.config_path = config_path
         self.test_mode = test_mode
         self.recognition_mode = recognition_mode
         self.event_bus = EventBus()
-        self.config = ConfigLoader.load_yaml(config_path) # Use ConfigLoader
+        self.config = ConfigLoader.load_yaml(config_path)
         self.models_config = self._load_models_config()
         self.vts_agent = None
         self.intent_resolver = None
-        self.input_processor: ASRProcessor = None # Type hint for clarity
+        self.input_processor = None
         self.current_language = language
+        self.input_type = input_type
 
     def _load_config(self):
         # This method is no longer needed as ConfigLoader.load_yaml is used directly in __init__
@@ -70,8 +72,8 @@ class ApplicationCore:
 
         vts_settings = self.config['vts_settings']
         self.vts_agent = VTSWebSocketAgent(
-            host=vts_settings['host'],
-            port=vts_settings['port'],
+            host=vts_settings['vts_host'],
+            port=vts_settings['vts_port'],
             token_file=vts_settings['token_file'],
             event_bus=self.event_bus
         )
@@ -86,70 +88,58 @@ class ApplicationCore:
         if self.test_mode:
             logger.info("--- RUNNING IN TEST MODE ---")
             self.input_processor = TestInputProcessor(self.event_bus)
-            await self.input_processor.initialize(config={}, language="en") # Test processor doesn't need full config
-        else:
-            logger.info("--- RUNNING IN NORMAL MODE (MICROPHONE INPUT) ---")
-            # The ASR processor is initialized in set_language, which is called here.
-            await self.set_language(self.current_language) 
+            await self.input_processor.initialize(config={}, language="en")
+        elif self.input_type == "emotion_detection":
+            logger.info("--- RUNNING IN EMOTION DETECTION MODE (WEBCAM INPUT) ---")
+            self.input_processor = CnnEmotionDetector(event_bus=self.event_bus)
+            emotion_config = self.config.get("emotion_detection_settings", {})
+            await self.input_processor.initialize(config=emotion_config)
+        else: # Default to voice recognition
+            logger.info("--- RUNNING IN VOICE RECOGNITION MODE (MICROPHONE INPUT) ---")
+            await self.set_language(self.current_language)
 
     async def run(self):
         logger.debug("ApplicationCore.run() entered.")
         await self._initialize_components()
-        if not self.vts_agent or not self.intent_resolver:
-            logger.error("Application cannot start due to initialization failure.")
-            return
 
         if not self.input_processor:
-            logger.error("No input processor available. The application will now exit.")
-            logger.error("Run with the --test flag for testing, or ensure ASR is properly configured.")
-            await self.vts_agent.disconnect()
+            logger.error("No input processor was initialized. Aborting run.")
             return
 
         logger.info("Starting application components...")
-        
         tasks = [
             asyncio.create_task(self.vts_agent.run()),
             asyncio.create_task(self.intent_resolver.resolve_intent()),
-            asyncio.create_task(self._transcription_consumer()), # New task for consuming transcriptions
+            asyncio.create_task(self._input_consumer()),
         ]
-
-        # If in test mode, we need a way to stop the application
-        if self.test_mode:
-            async def test_shutdown_manager():
-                # In test mode, the TestInputProcessor yields once and stops.
-                # We wait for a short period to allow the event to propagate.
-                await asyncio.sleep(5) 
-                logger.warning("--- TEST COMPLETE: SHUTTING DOWN APPLICATION ---")
-                for task in tasks:
-                    task.cancel()
-            tasks.append(asyncio.create_task(test_shutdown_manager()))
 
         try:
             await asyncio.gather(*tasks)
         except asyncio.CancelledError:
             logger.info("Application tasks were cancelled.")
-        except KeyboardInterrupt:
-            logger.info("Stopping application...")
         finally:
+            logger.info("Shutting down application components...")
             if self.vts_agent:
                 await self.vts_agent.disconnect()
             if self.input_processor:
-                await self.input_processor.stop_listening()
+                if isinstance(self.input_processor, ASRProcessor):
+                    await self.input_processor.stop_listening()
+                elif isinstance(self.input_processor, EmotionProcessor):
+                    await self.input_processor.stop_detection()
 
-    async def _transcription_consumer(self):
-        """Consumes transcriptions from the ASR processor and publishes them to the event bus."""
-        if not self.input_processor:
-            logger.error("Transcription consumer started without an input processor.")
-            return
+    async def _input_consumer(self):
+        """Consumes inputs from the active input processor and publishes them to the event bus."""
         try:
-            async for transcription in self.input_processor.start_listening():
-                # The ASRProcessor now directly publishes transcription_received events
-                # So, ApplicationCore just needs to keep the listening task alive
-                pass # The actual event publishing is handled within ASRProcessor
+            if isinstance(self.input_processor, ASRProcessor):
+                async for transcription in self.input_processor.start_listening():
+                    pass # ASRProcessor publishes its own events
+            elif isinstance(self.input_processor, EmotionProcessor):
+                async for emotion_data in self.input_processor.start_detection():
+                    pass # CnnEmotionDetector publishes its own events
         except asyncio.CancelledError:
-            logger.info("Transcription consumer task cancelled.")
+            logger.info("Input consumer task cancelled.")
         except Exception as e:
-            logger.error(f"Error in transcription consumer: {e}")
+            logger.error(f"Error in input consumer: {e}")
 
     async def _synchronize_expressions(self):
         logger.info("Checking for expression updates from VTube Studio...")

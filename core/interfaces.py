@@ -1,15 +1,12 @@
-
 from abc import ABC, abstractmethod
 from typing import AsyncGenerator
 
 class InputProcessor(ABC):
-    pass # No longer requires process_input
-
-class ASRProcessor(InputProcessor):
     @abstractmethod
     async def initialize(self, config: dict, language: str):
         pass
 
+class ASRProcessor(InputProcessor):
     @abstractmethod
     async def start_listening(self) -> AsyncGenerator[str, None]:
         pass
@@ -18,8 +15,18 @@ class ASRProcessor(InputProcessor):
     async def stop_listening(self):
         pass
 
+class VTSOutputAgent(ABC):
     @abstractmethod
-    async def get_transcription(self) -> str:
+    async def trigger_hotkey(self, hotkey_id: str):
+        pass
+
+class VTSDataProcessor(ABC):
+    @abstractmethod
+    async def run(self):
+        pass
+
+    @abstractmethod
+    async def stop(self):
         pass
 
 class IntentResolver(ABC):
@@ -27,7 +34,19 @@ class IntentResolver(ABC):
     async def resolve_intent(self):
         pass
 
-class VTSOutputAgent(ABC):
+class EmotionProcessor(ABC):
     @abstractmethod
-    async def trigger_hotkey(self, hotkey_id: str):
+    async def initialize(self, config: dict):
+        pass
+
+    @abstractmethod
+    async def start_detection(self) -> AsyncGenerator[dict, None]:
+        pass
+
+    @abstractmethod
+    async def stop_detection(self):
+        pass
+
+    @abstractmethod
+    async def get_detected_emotion(self) -> str:
         pass

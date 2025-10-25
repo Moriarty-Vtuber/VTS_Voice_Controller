@@ -54,13 +54,20 @@ class MainWindow(QMainWindow):
 
         self.mode_label = QLabel()
         self.mode_selector = QComboBox()
-        self.mode_selector.addItems([self.tr("mode_fast"), self.tr("mode_accurate")]) # Use tr() for translatable modes
+        self.mode_selector.addItems([self.tr("mode_fast"), self.tr("mode_accurate")])
+
+        self.input_type_label = QLabel()
+        self.input_type_selector = QComboBox()
+        self.input_type_selector.addItems([self.tr("input_type_voice"), self.tr("input_type_emotion")])
 
         settings_layout.addWidget(self.language_label)
         settings_layout.addWidget(self.language_selector)
         settings_layout.addStretch()
         settings_layout.addWidget(self.mode_label)
         settings_layout.addWidget(self.mode_selector)
+        settings_layout.addStretch()
+        settings_layout.addWidget(self.input_type_label)
+        settings_layout.addWidget(self.input_type_selector)
         
         grid_layout.addWidget(settings_frame, 0, 0, 1, 2)
 
@@ -109,37 +116,32 @@ class MainWindow(QMainWindow):
         self.keyword_editor.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         grid_layout.addWidget(self.keyword_editor, 3, 1, 1, 1)
 
-    def retranslate_ui(self, language: str):
-        lang_dict = self.translations.get(language, self.translations.get("en", {}))
+    def retranslate_ui(self, language):
+        self.setWindowTitle(self.tr("window_title"))
+        self.app_status_label.setText(f"<b>{self.tr('status_app')}:</b> {self.tr('status_stopped')}")
+        self.vts_status_label.setText(f"<b>{self.tr('status_vts')}:</b> {self.tr('status_disconnected')}")
+        self.asr_status_label.setText(f"<b>{self.tr('status_asr')}:</b> {self.tr('status_idle')}")
+        self.start_button.setText(self.tr("button_start"))
+        self.stop_button.setText(self.tr("button_stop"))
+        self.language_label.setText(self.tr("language_label"))
+        self.mode_label.setText(self.tr("mode_label"))
+        self.input_type_label.setText(self.tr("input_type_label"))
+        # self.keyword_editor_group.setTitle(self.tr("keyword_editor_title")) # This element was removed
+        self.save_button.setText(self.tr("button_save"))
+        # self.log_group.setTitle(self.tr("log_title")) # This element was removed
 
-        def tr(key, default_text=""):
-            return lang_dict.get(key, default_text)
-
-        self.setWindowTitle(tr("window_title", "VTS Voice Controller"))
-        self.set_status(vts=tr("status_disconnected", "Disconnected"), asr="Idle", app="Stopped")
-        self.mode_label.setText(tr("mode_label", "Recognition Mode:"))
-        self.start_button.setText(tr("start_button", "Start"))
-        self.stop_button.setText(tr("stop_button", "Stop"))
-        self.transcription_log.setPlaceholderText(tr("transcription_placeholder", "Live Transcription Output..."))
-        self.keyword_editor.setHorizontalHeaderLabels([
-            tr("header_expression", "Expression Name"), 
-            tr("header_keywords", "Keywords"), 
-            tr("header_cooldown", "Cooldown (s)")
-        ])
-        self.keyword_editor.horizontalHeaderItem(0).setToolTip(tr("tooltip_expression_name", "The name of the expression in VTube Studio."))
-        self.keyword_editor.horizontalHeaderItem(1).setToolTip(tr("tooltip_keywords", "Comma-separated list of keywords that will trigger this expression."))
-        self.keyword_editor.horizontalHeaderItem(2).setToolTip(tr("tooltip_cooldown", "Cooldown period in seconds after the expression is triggered."))
-        self.language_label.setText(tr("language_label", "Language:"))
-        self.setWindowIcon(QIcon(os.path.join(os.path.dirname(__file__), 'static', 'icons', 'app_icon.svg')))
-
+        self.mode_selector.setItemText(0, self.tr("mode_fast"))
+        self.mode_selector.setItemText(1, self.tr("mode_accurate"))
+        self.input_type_selector.setItemText(0, self.tr("input_type_voice"))
+        self.input_type_selector.setItemText(1, self.tr("input_type_emotion"))
 
     def append_log(self, text: str):
         self.transcription_log.append(text)
 
     def set_status(self, vts: str = None, asr: str = None, app: str = None):
-        if vts: self.vts_status_label.setText(f"VTS: {vts}")
-        if asr: self.asr_status_label.setText(f"ASR: {asr}")
-        if app: self.app_status_label.setText(f"App: {app}")
+        if vts: self.vts_status_label.setText(f"<b>{self.tr('status_vts')}:</b> {vts}")
+        if asr: self.asr_status_label.setText(f"<b>{self.tr('status_asr')}:</b> {asr}")
+        if app: self.app_status_label.setText(f"<b>{self.tr('status_app')}:</b> {app}")
 
     def _save_keywords_to_config(self):
         logger.info("--- UI: Save button clicked ---")

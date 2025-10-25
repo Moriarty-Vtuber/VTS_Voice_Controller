@@ -21,6 +21,9 @@ en:
   mode_accurate: "Accurate"
   keywords_saved_success: "Keywords saved successfully!"
   keywords_save_error: "Error: Failed to save keywords."
+  input_type_label: "Input Type"
+  input_type_voice: "Voice"
+  input_type_emotion: "Emotion"
 
 ja:
   window_title: "VTS音声コントローラー"
@@ -45,6 +48,9 @@ ja:
   mode_accurate: "正確"
   keywords_saved_success: "キーワードが正常に保存されました！"
   keywords_save_error: "エラー：キーワードの保存に失敗しました。"
+  input_type_label: "入力タイプ"
+  input_type_voice: "音声"
+  input_type_emotion: "感情"
 
 zh_hant:
   window_title: "VTS 語音控制器"
@@ -69,3 +75,6 @@ zh_hant:
   mode_accurate: "精確"
   keywords_saved_success: "關鍵字已成功儲存！"
   keywords_save_error: "錯誤：儲存關鍵字失敗。"
+  input_type_label: "輸入類型"
+  input_type_voice: "語音"
+  input_type_emotion: "表情"

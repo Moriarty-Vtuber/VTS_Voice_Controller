@@ -64,11 +64,20 @@ class AppUI:
         self.main_window.stop_button.setEnabled(True)
 
         recognition_mode = self.main_window.mode_selector.currentText()
+        ui_input_type = self.main_window.input_type_selector.currentText()
+        
+        # Map UI input type string to internal code string
+        if ui_input_type == self.main_window.tr("input_type_emotion"):
+            input_type = "emotion_detection"
+        else:
+            input_type = "voice" # Default to voice
+
         config_path = os.path.join(os.path.dirname(__file__), '..', 'vts_config.yaml')
         app_core = ApplicationCore(
             config_path=config_path,
             recognition_mode=recognition_mode,
-            language=self.current_language
+            language=self.current_language,
+            input_type=input_type
         )
 
         # Setup listeners on the running instance

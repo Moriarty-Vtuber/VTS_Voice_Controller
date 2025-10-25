@@ -5,8 +5,8 @@ pyyaml
 loguru
 requests
 tqdm
-onnxruntime==1.20.0
+onnxruntime
 webrtcvad-wheels
 PyQt6
 qasync
-opencv-python-headless
+opencv-python
