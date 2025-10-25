@@ -99,3 +99,4 @@ This section outlines key development practices reinforced during recent feature
 *   **Configuration Integrity:** Maintain strict integrity of configuration files (`.yaml`). Ensure all required keys are present, correctly formatted, and avoid duplicates.
 *   **Effective `.gitignore` & Repository Cleanliness:** Utilize `.gitignore` to exclude virtual environments, large binary files, and build artifacts from version control. Update it proactively. **Remember: Do not push unnecessary files to the repository.**
 *   **Precise Shell Commands:** Be mindful of shell command syntax and argument escaping, especially for multi-line inputs or special characters.
+*   **Verify Before Commit/Push:** NEVER commit or push code without first running the main program (`run.bat`) and thoroughly verifying that it functions correctly. This prevents destructive and stupid mistakes.

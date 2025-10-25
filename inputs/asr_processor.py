@@ -36,7 +36,7 @@ class SherpaOnnxASRProcessor(ASRProcessor):
         self.decoding_method = "greedy_search"
         self.debug = False
 
-    async def initialize(self, config: dict, language: str, model_url: str, model_base_dir: str):
+    async def initialize(self, config: dict, language: str, model_url: str, model_base_dir: str, microphone_name: str = "Default"):
         self.model_config = config
         self.model_dir = os.path.join(model_base_dir, self.model_config.get("path", ""))
         self.recognition_mode = config.get("recognition_mode", "fast")
@@ -46,6 +46,7 @@ class SherpaOnnxASRProcessor(ASRProcessor):
         self.SAMPLE_RATE = self.model_config.get("sample_rate", 16000)
         vad_aggressiveness = config.get("vad_aggressiveness", 1)
         self.vad_frame_duration_ms = config.get("vad_frame_duration_ms", 30)
+        self.microphone_name = microphone_name
 
         await self.event_bus.publish("asr_status_update", "Initializing")
 
@@ -177,8 +178,21 @@ class SherpaOnnxASRProcessor(ASRProcessor):
 
         try:
             blocksize = self.vad_frame_size * 2
+            
+            # Find the device index for the selected microphone name
+            device_index = None
+            if self.microphone_name != "Default":
+                devices = sd.query_devices()
+                for i, dev in enumerate(devices):
+                    if dev['name'] == self.microphone_name and dev['max_input_channels'] > 0:
+                        device_index = i
+                        break
+            
+            if device_index is None and self.microphone_name != "Default":
+                logger.warning(f"Selected microphone '{self.microphone_name}' not found. Using default.")
+
             with sd.InputStream(callback=sync_audio_callback,
-                                 channels=1, dtype='float32', samplerate=self.SAMPLE_RATE, blocksize=blocksize):
+                                 channels=1, dtype='float32', samplerate=self.SAMPLE_RATE, blocksize=blocksize, device=device_index):
                 logger.info("Microphone stream started. Say something!")
                 await self.event_bus.publish("asr_ready", True)
                 while self.running:

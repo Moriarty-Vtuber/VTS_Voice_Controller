@@ -41,4 +41,5 @@ build/
 # VTS specific
 vts_controller.log
 vts_token.json
+vts_token.txt
 models/emotion_model/

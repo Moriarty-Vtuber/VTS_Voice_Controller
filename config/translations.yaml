@@ -24,6 +24,8 @@ en:
   input_type_label: "Input Type"
   input_type_voice: "Voice"
   input_type_emotion: "Emotion"
+  microphone_label: "Microphone"
+  webcam_label: "Webcam"
 
 ja:
   window_title: "VTS音声コントローラー"
@@ -51,6 +53,8 @@ ja:
   input_type_label: "入力タイプ"
   input_type_voice: "音声"
   input_type_emotion: "感情"
+  microphone_label: "マイク"
+  webcam_label: "ウェブカメラ"
 
 zh_hant:
   window_title: "VTS 語音控制器"
@@ -78,3 +82,5 @@ zh_hant:
   input_type_label: "輸入類型"
   input_type_voice: "語音"
   input_type_emotion: "表情"
+  microphone_label: "麥克風"
+  webcam_label: "網路攝影機"

@@ -1,13 +1,5 @@
-vts_settings:
-  plugin_name: "VTS_Voice_Controller"
-  plugin_developer: "Zettai Ryouiki"
-  vts_host: "127.0.0.1"
-  vts_port: 8001
-  token_file: vts_token.json
-
 emotion_detection_settings:
   webcam_index: 0
-
 expressions:
   EyesCry.exp3.json:
     cooldown_s: 60
@@ -29,3 +21,11 @@ expressions:
     keywords:
     - NEW_KEYWORD_Angry
     name: Angry
+vts_settings:
+  plugin_developer: Zettai Ryouiki
+  plugin_name: VTS_Voice_Controller
+  selected_microphone_name: INPUT (2- Volt 1)
+  selected_webcam_index: 0
+  token_file: vts_token.json
+  vts_host: 127.0.0.1
+  vts_port: 8001

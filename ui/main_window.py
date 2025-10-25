@@ -60,6 +60,12 @@ class MainWindow(QMainWindow):
         self.input_type_selector = QComboBox()
         self.input_type_selector.addItems([self.tr("input_type_voice"), self.tr("input_type_emotion")])
 
+        self.microphone_label = QLabel()
+        self.microphone_selector = QComboBox()
+
+        self.webcam_label = QLabel()
+        self.webcam_selector = QComboBox()
+
         settings_layout.addWidget(self.language_label)
         settings_layout.addWidget(self.language_selector)
         settings_layout.addStretch()
@@ -68,6 +74,12 @@ class MainWindow(QMainWindow):
         settings_layout.addStretch()
         settings_layout.addWidget(self.input_type_label)
         settings_layout.addWidget(self.input_type_selector)
+        settings_layout.addStretch()
+        settings_layout.addWidget(self.microphone_label)
+        settings_layout.addWidget(self.microphone_selector)
+        settings_layout.addStretch()
+        settings_layout.addWidget(self.webcam_label)
+        settings_layout.addWidget(self.webcam_selector)
         
         grid_layout.addWidget(settings_frame, 0, 0, 1, 2)
 
@@ -126,6 +138,8 @@ class MainWindow(QMainWindow):
         self.language_label.setText(self.tr("language_label"))
         self.mode_label.setText(self.tr("mode_label"))
         self.input_type_label.setText(self.tr("input_type_label"))
+        self.microphone_label.setText(self.tr("microphone_label"))
+        self.webcam_label.setText(self.tr("webcam_label"))
         # self.keyword_editor_group.setTitle(self.tr("keyword_editor_title")) # This element was removed
         self.save_button.setText(self.tr("button_save"))
         # self.log_group.setTitle(self.tr("log_title")) # This element was removed

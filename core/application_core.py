@@ -28,6 +28,11 @@ class ApplicationCore:
         self.current_language = language
         self.input_type = input_type
 
+        # Load selected hardware from config
+        vts_settings = self.config.get('vts_settings', {})
+        self.selected_microphone_name = vts_settings.get('selected_microphone_name', 'Default')
+        self.selected_webcam_index = vts_settings.get('selected_webcam_index', 0)
+
     def _load_config(self):
         # This method is no longer needed as ConfigLoader.load_yaml is used directly in __init__
         pass
@@ -62,7 +67,7 @@ class ApplicationCore:
 
         # Instantiate the correct ASR processor based on configuration (currently only SherpaOnnxASRProcessor)
         self.input_processor = SherpaOnnxASRProcessor(event_bus=self.event_bus)
-        await self.input_processor.initialize(config=selected_model_config, language=language, model_url=model_url, model_base_dir=model_base_dir)
+        await self.input_processor.initialize(config=selected_model_config, language=language, model_url=model_url, model_base_dir=model_base_dir, microphone_name=self.selected_microphone_name)
         logger.info(f"Successfully initialized ASR for language: {language}")
 
     async def _initialize_components(self):
@@ -93,6 +98,7 @@ class ApplicationCore:
             logger.info("--- RUNNING IN EMOTION DETECTION MODE (WEBCAM INPUT) ---")
             self.input_processor = CnnEmotionDetector(event_bus=self.event_bus)
             emotion_config = self.config.get("emotion_detection_settings", {})
+            emotion_config["webcam_index"] = self.selected_webcam_index # Override with selected webcam
             await self.input_processor.initialize(config=emotion_config)
         else: # Default to voice recognition
             logger.info("--- RUNNING IN VOICE RECOGNITION MODE (MICROPHONE INPUT) ---")

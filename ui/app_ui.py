@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import QApplication
 
 from ui.main_window import MainWindow
 from core.application_core import ApplicationCore
+from inputs.utils.device_utils import get_audio_input_devices, get_webcam_devices
 
 def load_initial_config():
     try:
@@ -26,6 +27,7 @@ class AppUI:
 
         # Initial UI setup
         config_path = os.path.join(os.path.dirname(__file__), '..', 'vts_config.yaml')
+        self.config_path = config_path # Store config_path for later use
         initial_config = load_initial_config()
         
         self.main_window = MainWindow(config_path=config_path, initial_config=initial_config if initial_config is not None else {})
@@ -34,6 +36,12 @@ class AppUI:
         self.main_window.start_button.clicked.connect(self._start_button_clicked)
         self.main_window.stop_button.clicked.connect(self._stop_button_clicked)
         self.main_window.language_selector.currentTextChanged.connect(self._language_changed)
+        self.main_window.microphone_selector.currentTextChanged.connect(self._microphone_changed)
+        self.main_window.webcam_selector.currentTextChanged.connect(self._webcam_changed)
+
+        # Populate device selectors
+        self._populate_microphone_selector(initial_config)
+        self._populate_webcam_selector(initial_config)
 
         if initial_config:
             self.main_window.populate_keyword_editor(initial_config.get('expressions', {}))
@@ -41,6 +49,74 @@ class AppUI:
             logger.warning("Initial config not loaded, starting with empty expressions.")
         
         self.main_window.show()
+
+    def _save_config_setting(self, section: str, key: str, value: any):
+        try:
+            with open(self.config_path, 'r') as f:
+                config = yaml.safe_load(f)
+            if config is None: # Handle empty config file
+                config = {}
+            if section not in config:
+                config[section] = {}
+            config[section][key] = value
+            with open(self.config_path, 'w') as f:
+                yaml.safe_dump(config, f)
+            logger.info(f"Config updated: {section}.{key} = {value}")
+        except Exception as e:
+            logger.error(f"Failed to save config setting {section}.{key}: {e}")
+
+    def _populate_microphone_selector(self, initial_config: dict):
+        devices = get_audio_input_devices()
+        self.main_window.microphone_selector.clear()
+        current_mic_name = initial_config.get('vts_settings', {}).get('selected_microphone_name', 'Default')
+        
+        default_mic_index = -1
+        for i, dev in enumerate(devices):
+            self.main_window.microphone_selector.addItem(dev['name'])
+            if dev['name'] == current_mic_name:
+                default_mic_index = i
+        
+        if default_mic_index != -1:
+            self.main_window.microphone_selector.setCurrentIndex(default_mic_index)
+        elif devices:
+            # If the saved mic is not found, select the first available and save it
+            self.main_window.microphone_selector.setCurrentIndex(0)
+            self._save_config_setting('vts_settings', 'selected_microphone_name', devices[0]['name'])
+        else:
+            self.main_window.microphone_selector.addItem("No Microphones Found")
+            self.main_window.microphone_selector.setEnabled(False)
+
+    def _populate_webcam_selector(self, initial_config: dict):
+        devices = get_webcam_devices()
+        self.main_window.webcam_selector.clear()
+        current_webcam_index = initial_config.get('vts_settings', {}).get('selected_webcam_index', 0)
+
+        default_webcam_idx = -1
+        for i, dev in enumerate(devices):
+            self.main_window.webcam_selector.addItem(dev['name'])
+            if dev['index'] == current_webcam_index:
+                default_webcam_idx = i
+        
+        if default_webcam_idx != -1:
+            self.main_window.webcam_selector.setCurrentIndex(default_webcam_idx)
+        elif devices:
+            # If the saved webcam is not found, select the first available and save it
+            self.main_window.webcam_selector.setCurrentIndex(0)
+            self._save_config_setting('vts_settings', 'selected_webcam_index', devices[0]['index'])
+        else:
+            self.main_window.webcam_selector.addItem("No Webcams Found")
+            self.main_window.webcam_selector.setEnabled(False)
+
+    def _microphone_changed(self, text: str):
+        if text and text != "No Microphones Found":
+            self._save_config_setting('vts_settings', 'selected_microphone_name', text)
+
+    def _webcam_changed(self, text: str):
+        if text and text != "No Webcams Found":
+            # Find the index corresponding to the selected name
+            devices = get_webcam_devices()
+            selected_index = next((dev['index'] for dev in devices if dev['name'] == text), 0)
+            self._save_config_setting('vts_settings', 'selected_webcam_index', selected_index)
 
     def _language_changed(self, language: str):
         logger.info(f"--- UI: Language set to {language} for next run ---")
@@ -61,6 +137,9 @@ class AppUI:
         self.main_window.start_button.setEnabled(False)
         self.main_window.mode_selector.setEnabled(False)
         self.main_window.language_selector.setEnabled(False)
+        self.main_window.input_type_selector.setEnabled(False)
+        self.main_window.microphone_selector.setEnabled(False)
+        self.main_window.webcam_selector.setEnabled(False)
         self.main_window.stop_button.setEnabled(True)
 
         recognition_mode = self.main_window.mode_selector.currentText()
@@ -111,6 +190,9 @@ class AppUI:
             self.main_window.start_button.setEnabled(True)
             self.main_window.mode_selector.setEnabled(True)
             self.main_window.language_selector.setEnabled(True)
+            self.main_window.input_type_selector.setEnabled(True)
+            self.main_window.microphone_selector.setEnabled(True)
+            self.main_window.webcam_selector.setEnabled(True)
             self.main_window.stop_button.setEnabled(False)
 
     async def _handle_transcription_events(self, queue: asyncio.Queue):
