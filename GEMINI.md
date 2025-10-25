@@ -90,3 +90,12 @@ To ensure a clean and isolated environment, it is highly recommended to use a Py
 # NEVER PIP INSTALL IN ROOT PIP ENV
 # ALWAYS DO ANY ENV MODIFICATION IN VENV
 # RUN run.bat BY YOURSELF ALWAYS BEFORE REPORT COMPLETE RESULT TO USER
+
+## Development Best Practices
+
+This section outlines key development practices reinforced during recent feature implementations:
+
+*   **External Resource Validation:** Always verify download URLs for binary assets (e.g., models) point to raw file content, not HTML pages. Test links before integration.
+*   **Configuration Integrity:** Maintain strict integrity of configuration files (`.yaml`). Ensure all required keys are present, correctly formatted, and avoid duplicates.
+*   **Effective `.gitignore` & Repository Cleanliness:** Utilize `.gitignore` to exclude virtual environments, large binary files, and build artifacts from version control. Update it proactively. **Remember: Do not push unnecessary files to the repository.**
+*   **Precise Shell Commands:** Be mindful of shell command syntax and argument escaping, especially for multi-line inputs or special characters.
