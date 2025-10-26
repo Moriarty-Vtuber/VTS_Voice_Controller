@@ -1,26 +1,11 @@
 emotion_detection_settings:
   webcam_index: 0
 expressions:
-  EyesCry.exp3.json:
-    cooldown_s: 60
+  test.exp3.json:
+    name: test_expression
     keywords:
-    - NEW_KEYWORD_Eyes_Cry
-    name: Eyes Cry
-  EyesLove.exp3.json:
+    - NEW_KEYWORD_test_expression
     cooldown_s: 60
-    keywords:
-    - NEW_KEYWORD_Heart_Eyes
-    name: Heart Eyes
-  Shock.exp3.json:
-    cooldown_s: 60
-    keywords:
-    - NEW_KEYWORD_Shock
-    name: Shock
-  SignAngry.exp3.json:
-    cooldown_s: 60
-    keywords:
-    - NEW_KEYWORD_Angry
-    name: Angry
 vts_settings:
   plugin_developer: Zettai Ryouiki
   plugin_name: VTS_Voice_Controller

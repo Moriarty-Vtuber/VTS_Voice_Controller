@@ -195,7 +195,9 @@ class AppUI:
         vts_status_queue = await app_core.event_bus.subscribe("vts_status_update")
         asr_status_queue = await app_core.event_bus.subscribe("asr_status_update")
         asr_ready_queue = await app_core.event_bus.subscribe("asr_ready")
-        emotion_detected_queue = await app_core.event_bus.subscribe("emotion_detected") # New listener
+        emotion_detected_queue = await app_core.event_bus.subscribe("emotion_detected")
+        vts_model_changed_queue = await app_core.event_bus.subscribe("vts_model_changed")
+
 
         listener_tasks = [
             asyncio.create_task(self._handle_transcription_events(transcription_queue)),
@@ -203,7 +205,8 @@ class AppUI:
             asyncio.create_task(self._handle_vts_status_events(vts_status_queue)),
             asyncio.create_task(self._handle_asr_status_events(asr_status_queue)),
             asyncio.create_task(self._handle_asr_ready_events(asr_ready_queue)),
-            asyncio.create_task(self._handle_emotion_detected_events(emotion_detected_queue)), # New listener task
+            asyncio.create_task(self._handle_emotion_detected_events(emotion_detected_queue)),
+            asyncio.create_task(self._handle_vts_model_changed_events(vts_model_changed_queue)),
         ]
 
         try:
@@ -236,6 +239,25 @@ class AppUI:
                 queue.task_done()
             except asyncio.CancelledError:
                 break
+
+    async def _handle_vts_model_changed_events(self, queue: asyncio.Queue):
+        while True:
+            try:
+                event = await queue.get()
+                new_expressions = event.payload.get("expressions", [])
+                self.main_window.append_log("VTube Studio model changed. Updating expression list...")
+
+                # We need the current emotion mappings to repopulate correctly
+                with open(self.config_path, 'r') as f:
+                    config = yaml.safe_load(f)
+                emotion_mappings = config.get('emotion_mappings', {})
+
+                self.main_window.populate_emotion_editor(emotion_mappings, new_expressions)
+                queue.task_done()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Error handling VTS model changed event: {e}")
 
     async def _handle_hotkey_events(self, queue: asyncio.Queue):
         while True:

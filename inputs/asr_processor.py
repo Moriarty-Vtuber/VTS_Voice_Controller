@@ -161,16 +161,23 @@ class SherpaOnnxASRProcessor(ASRProcessor):
 
         async def process_audio_buffer_periodically():
             while self.running:
-                await asyncio.sleep(0.05)  # Process buffer every 0.05 seconds (50ms)
+                await asyncio.sleep(0.25)  # Process buffer every 0.25 seconds
+
+                audio_to_process = None
                 async with self.buffer_lock:
                     if self.audio_buffer.size > 0:
-                        await self.event_bus.publish("asr_status_update", "Transcribing")
-                        transcribed_text = self._transcribe_np(self.audio_buffer)
-                        if transcribed_text:
-                            logger.debug(f"ASR transcribed text: {transcribed_text}")
-                            await self.event_bus.publish("transcription_received", transcribed_text)
-                            await self.transcription_queue.put(transcribed_text) # Put into queue for get_transcription
-                        self.audio_buffer = np.array([], dtype=np.float32)  # Clear the buffer
+                        audio_to_process = self.audio_buffer
+                        self.audio_buffer = np.array([], dtype=np.float32)
+
+                if audio_to_process is not None and audio_to_process.size > 0:
+                    await self.event_bus.publish("asr_status_update", "Transcribing")
+                    transcribed_text = self._transcribe_np(audio_to_process)
+
+                    if transcribed_text:
+                        logger.debug(f"ASR transcribed text: {transcribed_text}")
+                        await self.event_bus.publish("transcription_received", transcribed_text)
+                        await self.transcription_queue.put(transcribed_text)
+                    else:
                         await self.event_bus.publish("asr_status_update", "Listening")
             logger.info("Audio processing task stopped.")
 
@@ -179,7 +186,6 @@ class SherpaOnnxASRProcessor(ASRProcessor):
         try:
             blocksize = self.vad_frame_size * 2
             
-            # Find the device index for the selected microphone name
             device_index = None
             if self.microphone_name != "Default":
                 devices = sd.query_devices()
@@ -196,7 +202,14 @@ class SherpaOnnxASRProcessor(ASRProcessor):
                 logger.info("Microphone stream started. Say something!")
                 await self.event_bus.publish("asr_ready", True)
                 while self.running:
-                    yield await self.transcription_queue.get()
+                    try:
+                        transcription = await asyncio.wait_for(
+                            self.transcription_queue.get(), timeout=0.1
+                        )
+                        yield transcription
+                        self.transcription_queue.task_done()
+                    except asyncio.TimeoutError:
+                        continue
         except asyncio.CancelledError:
             logger.info("Microphone stream cancelled.")
         except Exception as e:
@@ -204,8 +217,12 @@ class SherpaOnnxASRProcessor(ASRProcessor):
             await self.event_bus.publish("asr_status_update", "Error")
             raise
         finally:
-            if self.audio_processing_task:
+            if self.audio_processing_task and not self.audio_processing_task.done():
                 self.audio_processing_task.cancel()
+                try:
+                    await self.audio_processing_task
+                except asyncio.CancelledError:
+                    pass
             self.running = False
             logger.info("Microphone stream stopped.")
 
