@@ -1,4 +1,3 @@
-
 import asyncio
 import yaml
 from loguru import logger
@@ -13,6 +12,8 @@ from inputs.asr_processor import SherpaOnnxASRProcessor
 from inputs.emotion_detector import CnnEmotionDetector
 from core.interfaces import ASRProcessor, EmotionProcessor
 from core.config_loader import ConfigLoader
+
+EMOTION_COOLDOWN_SECONDS = 5 # Cooldown for emotion-triggered expressions
 
 class ApplicationCore:
     def __init__(self, config_path: str, test_mode: bool = False, recognition_mode: str = "fast", language: str = "en", input_type: str = "voice"):
@@ -33,9 +34,10 @@ class ApplicationCore:
         self.selected_microphone_name = vts_settings.get('selected_microphone_name', 'Default')
         self.selected_webcam_index = vts_settings.get('selected_webcam_index', 0)
 
-    def _load_config(self):
-        # This method is no longer needed as ConfigLoader.load_yaml is used directly in __init__
-        pass
+        # Emotion detection specific
+        self.emotion_cooldowns = {}
+        self.emotion_mappings = self.config.get('emotion_mappings', {})
+        self.available_vts_expression_names = [] # Initialize here
 
     def _load_models_config(self):
         if getattr(sys, 'frozen', False):
@@ -86,7 +88,9 @@ class ApplicationCore:
         await self.vts_agent.connect()
         await self.vts_agent.authenticate()
 
-        expression_map = await self._synchronize_expressions() or {}
+        expression_map, self.available_vts_expression_names = await self._synchronize_expressions()
+        if not expression_map:
+            expression_map = {}
 
         self.intent_resolver = KeywordIntentResolver(self.event_bus, expression_map)
 
@@ -107,6 +111,10 @@ class ApplicationCore:
     async def run(self):
         logger.debug("ApplicationCore.run() entered.")
         await self._initialize_components()
+        await self.run_without_init()
+
+    async def run_without_init(self):
+        logger.debug("ApplicationCore.run_without_init() entered.")
 
         if not self.input_processor:
             logger.error("No input processor was initialized. Aborting run.")
@@ -118,6 +126,9 @@ class ApplicationCore:
             asyncio.create_task(self.intent_resolver.resolve_intent()),
             asyncio.create_task(self._input_consumer()),
         ]
+
+        if self.input_type == "emotion_detection":
+            tasks.append(asyncio.create_task(self._handle_emotion_events()))
 
         try:
             await asyncio.gather(*tasks)
@@ -132,6 +143,35 @@ class ApplicationCore:
                     await self.input_processor.stop_listening()
                 elif isinstance(self.input_processor, EmotionProcessor):
                     await self.input_processor.stop_detection()
+
+    async def _handle_emotion_events(self):
+        """Consumes emotion detection events and triggers VTS hotkeys based on mappings and cooldowns."""
+        emotion_queue = await self.event_bus.subscribe("emotion_detected")
+        while True:
+            try:
+                event = await emotion_queue.get()
+                detected_emotion = event.payload.get("emotion")
+                
+                if detected_emotion and detected_emotion in self.emotion_mappings:
+                    hotkey_id = self.emotion_mappings[detected_emotion]
+                    
+                    if hotkey_id and hotkey_id != "null": # Check if a mapping exists and is not explicitly null
+                        current_time = asyncio.get_event_loop().time()
+                        last_triggered_time = self.emotion_cooldowns.get(hotkey_id, 0)
+
+                        if (current_time - last_triggered_time) > EMOTION_COOLDOWN_SECONDS:
+                            logger.info(f"Emotion '{detected_emotion}' detected. Triggering VTS hotkey: {hotkey_id}")
+                            await self.vts_agent.trigger_hotkey(hotkey_id)
+                            self.emotion_cooldowns[hotkey_id] = current_time
+                            await self.event_bus.publish("hotkey_triggered", hotkey_id)
+                        else:
+                            logger.debug(f"Emotion '{detected_emotion}' detected, but hotkey '{hotkey_id}' is on cooldown.")
+                emotion_queue.task_done()
+            except asyncio.CancelledError:
+                logger.info("Emotion event handler task cancelled.")
+                break
+            except Exception as e:
+                logger.error(f"Error in emotion event handler: {e}")
 
     async def _input_consumer(self):
         """Consumes inputs from the active input processor and publishes them to the event bus."""
@@ -203,12 +243,16 @@ class ApplicationCore:
                         session_expression_map[exp_data['name']] = trigger_data
                 
                 logger.info(f"Expression map created with {len(session_expression_map)} keywords. Ready to detect keywords.")
-                return session_expression_map
+                
+                # Also return a list of available VTS expression names for UI population
+                self.available_vts_expression_names = [exp.get('name') for exp in vts_expressions if exp.get('name')]
+                return session_expression_map, self.available_vts_expression_names
             else:
                 logger.warning("Received no or malformed hotkey data from VTube Studio.")
 
         except Exception as e:
             logger.error(f"Failed to auto-update expressions: {e}")
         
-        logger.error("Expression synchronization failed. Returning empty map.")
-        return {}
+        logger.error("Expression synchronization failed. Returning empty map and list.")
+        self.available_vts_expression_names = []
+        return {}, []

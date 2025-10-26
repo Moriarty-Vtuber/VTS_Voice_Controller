@@ -290,24 +290,19 @@ class MainWindow(QMainWindow):
             row += 1
 
     def populate_emotion_editor(self, emotion_mappings: dict, available_vts_expressions: list):
-        logger.debug(f"Populating emotion editor. Mappings: {emotion_mappings}, Available VTS Expressions: {available_vts_expressions}")
+        logger.debug(f"Populating emotion editor with {len(available_vts_expressions)} VTS expressions.")
 
         # Clear existing items and add a "None" option
         for emotion in self.EMOTION_LABELS:
             combo_box = self.emotion_editor_comboboxes.get(emotion)
-            print(f"[DEBUG] Processing emotion '{emotion}'. ComboBox object: {combo_box}. bool(combo_box): {bool(combo_box)}")
-            try:
-                combo_box.clear()
-                combo_box.addItem("None") # Option to not trigger any expression
-                print(f"[DEBUG] Before adding dummy choices to {emotion} combobox. Item count: {combo_box.count()}")
-                # --- START DUMMY CHOICES FOR TESTING ---
-                combo_box.addItem("Dummy Expression 1")
-                combo_box.addItem("Dummy Expression 2")
-                combo_box.addItem("Another Dummy")
-                print(f"[DEBUG] Added dummy choices to {emotion} combobox. After adding, item count: {combo_box.count()}")
-                # --- END DUMMY CHOICES FOR TESTING ---
-            except Exception as e:
-                print(f"[ERROR] Exception while populating combobox for emotion '{emotion}': {e}")
+            if combo_box is not None:
+                try:
+                    combo_box.clear()
+                    combo_box.addItem("None") # Option to not trigger any expression
+                    if available_vts_expressions:
+                        combo_box.addItems(available_vts_expressions)
+                except Exception as e:
+                    print(f"[ERROR] Exception while populating combobox for emotion '{emotion}': {e}")
 
             # Set current selection based on config
             mapped_expression = emotion_mappings.get(emotion)
