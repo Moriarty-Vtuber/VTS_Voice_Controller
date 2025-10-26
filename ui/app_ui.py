@@ -38,6 +38,7 @@ class AppUI:
         self.main_window.language_selector.currentTextChanged.connect(self._language_changed)
         self.main_window.microphone_selector.currentTextChanged.connect(self._microphone_changed)
         self.main_window.webcam_selector.currentTextChanged.connect(self._webcam_changed)
+        self.main_window.input_type_selector.currentTextChanged.connect(self._input_type_changed)
 
         # Populate device selectors
         self._populate_microphone_selector(initial_config)
@@ -48,7 +49,21 @@ class AppUI:
         else:
             logger.warning("Initial config not loaded, starting with empty expressions.")
         
+# Removed initial populate_emotion_editor call
+        
+        logger.debug(f"AppUI: Before show() - Central Widget Visible={self.main_window.centralWidget().isVisible()}, Emotion Editor Frame Visible={self.main_window.emotion_editor_frame.isVisible()}")
         self.main_window.show()
+        logger.debug(f"AppUI: After show() - Central Widget Visible={self.main_window.centralWidget().isVisible()}, Emotion Editor Frame Visible={self.main_window.emotion_editor_frame.isVisible()}")
+
+        # Populate emotion editor on startup with existing mappings and an empty list for available VTS expressions
+        self.main_window.populate_emotion_editor(
+            initial_config.get('emotion_mappings', {}),
+            [] # Available VTS expressions are not fetched yet at this stage
+        )
+        self.main_window.emotion_editor_frame.repaint() # Force repaint after populating
+
+        # Set initial state of mode_selector based on current input_type_selector selection
+        self._input_type_changed(self.main_window.input_type_selector.currentText())
 
     def _save_config_setting(self, section: str, key: str, value: any):
         try:
@@ -123,6 +138,12 @@ class AppUI:
         self.current_language = language
         self.main_window.retranslate_ui(language)
 
+    def _input_type_changed(self, text: str):
+        if text == self.main_window.tr("input_type_emotion"):
+            self.main_window.mode_selector.setEnabled(False)
+        else:
+            self.main_window.mode_selector.setEnabled(True)
+
     def _start_button_clicked(self):
         logger.info("--- UI: Start button clicked ---")
         self.app_core_task = asyncio.create_task(self.start_application())
@@ -159,12 +180,22 @@ class AppUI:
             input_type=input_type
         )
 
+        # Initialize components first to get VTS expressions
+        await app_core._initialize_components()
+
+        # Populate emotion editor in UI
+        self.main_window.populate_emotion_editor(
+            app_core.config.get('emotion_mappings', {}),
+            app_core.available_vts_expression_names
+        )
+
         # Setup listeners on the running instance
         transcription_queue = await app_core.event_bus.subscribe("transcription_received")
         hotkey_queue = await app_core.event_bus.subscribe("hotkey_triggered")
         vts_status_queue = await app_core.event_bus.subscribe("vts_status_update")
         asr_status_queue = await app_core.event_bus.subscribe("asr_status_update")
         asr_ready_queue = await app_core.event_bus.subscribe("asr_ready")
+        emotion_detected_queue = await app_core.event_bus.subscribe("emotion_detected") # New listener
 
         listener_tasks = [
             asyncio.create_task(self._handle_transcription_events(transcription_queue)),
@@ -172,11 +203,13 @@ class AppUI:
             asyncio.create_task(self._handle_vts_status_events(vts_status_queue)),
             asyncio.create_task(self._handle_asr_status_events(asr_status_queue)),
             asyncio.create_task(self._handle_asr_ready_events(asr_ready_queue)),
+            asyncio.create_task(self._handle_emotion_detected_events(emotion_detected_queue)), # New listener task
         ]
 
         try:
             logger.debug("Attempting to run app_core...")
-            await app_core.run()
+            # Now run the core without re-initializing components
+            await app_core.run_without_init() # We will create this new method in ApplicationCore
         except asyncio.CancelledError:
             logger.info("Application core task was cancelled by UI.")
         finally:
@@ -236,6 +269,15 @@ class AppUI:
             try:
                 await queue.get()
                 self.main_window.set_status(app="Running")
+                queue.task_done()
+            except asyncio.CancelledError:
+                break
+
+    async def _handle_emotion_detected_events(self, queue: asyncio.Queue):
+        while True:
+            try:
+                event = await queue.get()
+                self.main_window.append_log(f"Emotion Detected: {event.payload.get('emotion')}")
                 queue.task_done()
             except asyncio.CancelledError:
                 break

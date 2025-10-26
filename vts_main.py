@@ -12,7 +12,8 @@ def main():
     if not os.path.exists("logs"):
         os.mkdir("logs")
     log_path = os.path.join("logs", "vts_controller.log")
-    logger.add(log_path, rotation="10 MB", retention="7 days", level="INFO", backtrace=True, diagnose=True)
+    logger.add(log_path, rotation="10 MB", retention="7 days", level="DEBUG", backtrace=True, diagnose=True)
+    logger.add(sys.stdout, level="DEBUG") # Add a sink for stdout to capture print statements
 
     # --- Set up the asyncio event loop for qasync ---
     if sys.platform == 'win32':
