@@ -11,10 +11,9 @@ from core.application_core import ApplicationCore
 
 class TestApplicationCore(unittest.TestCase):
 
-    @unittest.skip("Skipping due to timeout issues")
-    @patch('core.application_core.TestInputProcessor')
+    @patch('core.application_core.ASRProcessor', MagicMock())
     @patch('core.application_core.VTSWebSocketAgent')
-    def test_application_run(self, mock_vts_agent, mock_input_processor):
+    def test_application_run(self, mock_vts_agent):
         async def run_test():
             # Setup application
             app = ApplicationCore("vts_config.yaml", test_mode=True)

@@ -13,7 +13,7 @@ from inputs.emotion_detector import CnnEmotionDetector
 from core.interfaces import ASRProcessor, EmotionProcessor
 from core.config_loader import ConfigLoader
 
-EMOTION_COOLDOWN_SECONDS = 5
+EMOTION_COOLDOWN_SECONDS = 5 # Cooldown for emotion-triggered expressions
 
 class ApplicationCore:
     def __init__(self, config_path: str, test_mode: bool = False, recognition_mode: str = "fast", language: str = "en", input_type: str = "voice"):
@@ -37,9 +37,7 @@ class ApplicationCore:
         # Emotion detection specific
         self.emotion_cooldowns = {}
         self.emotion_mappings = self.config.get('emotion_mappings', {})
-        self.available_vts_expression_names = []
-        self.current_vts_model_id = None
-
+        self.available_vts_expression_names = [] # Initialize here
 
     def _load_models_config(self):
         if getattr(sys, 'frozen', False):
@@ -127,7 +125,6 @@ class ApplicationCore:
             asyncio.create_task(self.vts_agent.run()),
             asyncio.create_task(self.intent_resolver.resolve_intent()),
             asyncio.create_task(self._input_consumer()),
-            asyncio.create_task(self._monitor_vts_model_changes()),
         ]
 
         if self.input_type == "emotion_detection":
@@ -259,18 +256,3 @@ class ApplicationCore:
         logger.error("Expression synchronization failed. Returning empty map and list.")
         self.available_vts_expression_names = []
         return {}, []
-
-    async def _monitor_vts_model_changes(self):
-        while True:
-            await asyncio.sleep(5)
-            try:
-                response = await self.vts_agent.get_current_model()
-                if response and 'modelID' in response['data']:
-                    new_model_id = response['data']['modelID']
-                    if self.current_vts_model_id != new_model_id:
-                        logger.info(f"VTube Studio model changed from {self.current_vts_model_id} to {new_model_id}.")
-                        self.current_vts_model_id = new_model_id
-                        _, new_expressions = await self._synchronize_expressions()
-                        await self.event_bus.publish("vts_model_changed", {"expressions": new_expressions})
-            except Exception as e:
-                logger.error(f"Error checking for VTS model changes: {e}")
