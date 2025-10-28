@@ -83,6 +83,18 @@ class VTSWebSocketAgent(VTSOutputAgent):
             logger.error(f"Failed to get hotkey list: {e}")
             raise
 
+    async def get_current_model(self):
+        """Get information about the current model."""
+        logger.info("Requesting current model from VTube Studio...")
+        request = self.vts.vts_request.BaseRequest("CurrentModelRequest")
+        try:
+            async with self.request_lock:
+                response = await self.vts.request(request)
+            return response
+        except Exception as e:
+            logger.error(f"Failed to get current model: {e}")
+            raise
+
     async def disconnect(self):
         """Disconnect from VTube Studio."""
         if self.vts.get_connection_status() == 1:

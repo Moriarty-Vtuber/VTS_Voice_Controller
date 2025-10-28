@@ -87,16 +87,57 @@ To ensure a clean and isolated environment, it is highly recommended to use a Py
     - Open `vts_config.yaml`.
     - Change the placeholder keywords (e.g., `NEW_KEYWORD_MyExpression`) to the voice commands you want to use.
 
-# NEVER PIP INSTALL IN ROOT PIP ENV
-# ALWAYS DO ANY ENV MODIFICATION IN VENV
-# RUN run.bat BY YOURSELF ALWAYS BEFORE REPORT COMPLETE RESULT TO USER
 
-## Development Best Practices
 
-This section outlines key development practices reinforced during recent feature implementations:
 
-*   **External Resource Validation:** Always verify download URLs for binary assets (e.g., models) point to raw file content, not HTML pages. Test links before integration.
-*   **Configuration Integrity:** Maintain strict integrity of configuration files (`.yaml`). Ensure all required keys are present, correctly formatted, and avoid duplicates.
-*   **Effective `.gitignore` & Repository Cleanliness:** Utilize `.gitignore` to exclude virtual environments, large binary files, and build artifacts from version control. Update it proactively. **Remember: Do not push unnecessary files to the repository.**
-*   **Precise Shell Commands:** Be mindful of shell command syntax and argument escaping, especially for multi-line inputs or special characters.
-*   **Verify Before Commit/Push:** NEVER commit or push code without first running the main program (`run.bat`) and thoroughly verifying that it functions correctly. This prevents destructive and stupid mistakes.
+
+
+# 🧑‍💻 PROFESSIONAL SOFTWARE DEVELOPER DIRECTIVES (GEMINI.md)
+
+These directives establish the mandatory operating procedures and quality standards for all development tasks. **Strict adherence is non-negotiable.**
+
+---
+
+## 🛑 ENVIRONMENT & EXECUTION GOVERNANCE
+
+* **VENV MANDATE:** **ALWAYS** perform any environment modification (installations, configuration changes) **only within a dedicated Python virtual environment (venv).**
+* **ROOT ENV PROHIBITION:** **NEVER** use `pip install` or modify the system's root Python environment.
+* **MANDATORY PRE-COMMIT TEST:** Before reporting completion or integrating changes, you **MUST** execute the main program via `run.bat` within the correct environment. **No exceptions.** Only results from a successful `run.bat` are acceptable.
+
+---
+
+## 🧠 PROBLEM SOLVING & PLANNING
+
+* **STEP 1: UNDERSTAND & CLARIFY:** **NEVER** begin coding without a complete understanding of the problem and the user's intent. If any part of the request is ambiguous, **IMMEDIATELY ask the user for clarification.** **Do not make assumptions.**
+* **ANALYSIS FIRST:** Before making changes, conduct a full analysis of the current code, identifying potential side effects and the smallest, safest point of insertion for new logic.
+* **DEFENSIVE CODING PRINCIPLE:** Assume all external inputs (user, file data, API responses) are potentially invalid. Implement robust **input validation** and **error handling** (e.g., `try...except` blocks) to prevent crashes and provide informative diagnostics.
+
+---
+
+## ✨ CODE QUALITY & INTEGRITY
+
+* **ATOMIC COMMITS (Mental Model):** Restrict each proposed change to a single, logical task. Avoid combining bug fixes, refactoring, and new features into one action.
+* **DON'T BREAK WORKING CODE:** If a task requires modifying functional code, **the new solution MUST be demonstrably safer, faster, or more scalable.** Default to adding new logic rather than destructively changing existing, stable logic.
+* **Configuration Integrity Check:** Maintain strict integrity of all configuration files (e.g., `.yaml`, `.json`). Before modification, verify all required keys are present and correctly formatted. **NEVER** introduce duplicate keys or incorrect types.
+* **External Resource Validation:** **ALWAYS** verify download URLs (for models, assets, etc.) resolve directly to the **raw file content**, not a web/HTML landing page. Test link validity before integrating.
+* **Precise Shell Commands:** Pay meticulous attention to shell command syntax, argument order, and the correct escaping of special characters, especially in cross-platform scripts.
+
+---
+
+## 🗑️ REPOSITORY HYGIENE
+
+* **STRICT `.gitignore`:** Proactively utilize and maintain the `.gitignore` file. It **MUST** exclude:
+    * Virtual environments (`venv`, etc.).
+    * Large binary assets (models, datasets).
+    * Build artifacts and temporary cache files.
+* **NO UNNECESSARY FILES:** **NEVER** include or push generated, temporary, or non-essential files to the repository. **Keep the codebase lean and focused.**
+
+---
+
+## 📣 REPORTING STANDARDS
+
+* **THE FULL REPORT:** A complete result to the user **MUST** include:
+    1. A clear summary of the implemented change.
+    2. The specific files and lines of code modified.
+    3. A confirmation statement that `run.bat` was executed and passed successfully.
+    4. Any assumptions made **(ideally none)** or trade-offs considered.
