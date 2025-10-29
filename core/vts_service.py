@@ -1,12 +1,10 @@
-
 import asyncio
 from loguru import logger
 import pyvts
-from core.interfaces import VTSOutputAgent
 from core.event_bus import EventBus
 
-class VTSWebSocketAgent(VTSOutputAgent):
-    """Agent to interact with the VTube Studio API via WebSocket."""
+class VTubeStudioService:
+    """Service to interact with the VTube Studio API via WebSocket."""
 
     def __init__(self, host: str, port: int, token_file: str, event_bus: EventBus):
         self.host = host
@@ -18,7 +16,7 @@ class VTSWebSocketAgent(VTSOutputAgent):
             "developer": "Gemini",
             "authentication_token_path": self.token_file,
         })
-        self.request_lock = asyncio.Lock()  # For serializing sensitive requests
+        self.request_lock = asyncio.Lock()
 
     async def connect(self, max_retries=5, retry_delay=5):
         """Connect to VTube Studio with a retry mechanism."""
@@ -39,7 +37,6 @@ class VTSWebSocketAgent(VTSOutputAgent):
                     logger.error("Please ensure VTube Studio is running and the API is enabled on port 8001.")
                     await self.event_bus.publish("vts_status_update", "Connection Failed")
                     raise
-
 
     async def authenticate(self):
         """Authenticate with VTube Studio."""
@@ -62,7 +59,6 @@ class VTSWebSocketAgent(VTSOutputAgent):
         """Trigger a hotkey in VTube Studio."""
         request = self.vts.vts_request.requestTriggerHotKey(hotkey_id)
         try:
-            # No lock here for expression triggers to allow concurrent requests
             response = await self.vts.request(request)
             if "hotkeyID" in response.get("data", {}):
                 logger.info(f"Triggered hotkey: {hotkey_id}")
@@ -76,23 +72,11 @@ class VTSWebSocketAgent(VTSOutputAgent):
         logger.info("Requesting hotkey list from VTube Studio...")
         request = self.vts.vts_request.requestHotKeyList()
         try:
-            async with self.request_lock:  # Lock for this request
-                response = await self.vts.request(request)
-            return response
-        except Exception as e:
-            logger.error(f"Failed to get hotkey list: {e}")
-            raise
-
-    async def get_current_model(self):
-        """Get information about the current model."""
-        logger.info("Requesting current model from VTube Studio...")
-        request = self.vts.vts_request.BaseRequest("CurrentModelRequest")
-        try:
             async with self.request_lock:
                 response = await self.vts.request(request)
             return response
         except Exception as e:
-            logger.error(f"Failed to get current model: {e}")
+            logger.error(f"Failed to get hotkey list: {e}")
             raise
 
     async def disconnect(self):
@@ -101,13 +85,3 @@ class VTSWebSocketAgent(VTSOutputAgent):
             await self.vts.close()
             logger.info("Disconnected from VTube Studio.")
             await self.event_bus.publish("vts_status_update", "Disconnected")
-
-    async def run(self):
-        """Listen for hotkey trigger events on the event bus."""
-        trigger_queue = await self.event_bus.subscribe("hotkey_triggered")
-        logger.info("VTS agent is listening for hotkey triggers.")
-        while True:
-            event = await trigger_queue.get()
-            logger.debug(f"VTS agent received trigger event for hotkey: {event.payload}")
-            await self.trigger_hotkey(event.payload)
-            trigger_queue.task_done()

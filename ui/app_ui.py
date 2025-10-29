@@ -24,6 +24,7 @@ class AppUI:
     def __init__(self):
         self.app_core_task = None
         self.current_language = "en"
+        self.app_core = None
 
         # Initial UI setup
         config_path = os.path.join(os.path.dirname(__file__), '..', 'vts_config.yaml')
@@ -49,21 +50,26 @@ class AppUI:
         else:
             logger.warning("Initial config not loaded, starting with empty expressions.")
         
-# Removed initial populate_emotion_editor call
-        
         logger.debug(f"AppUI: Before show() - Central Widget Visible={self.main_window.centralWidget().isVisible()}, Emotion Editor Frame Visible={self.main_window.emotion_editor_frame.isVisible()}")
         self.main_window.show()
         logger.debug(f"AppUI: After show() - Central Widget Visible={self.main_window.centralWidget().isVisible()}, Emotion Editor Frame Visible={self.main_window.emotion_editor_frame.isVisible()}")
 
         # Populate emotion editor on startup with existing mappings and an empty list for available VTS expressions
-        self.main_window.populate_emotion_editor(
-            initial_config.get('emotion_mappings', {}),
-            [] # Available VTS expressions are not fetched yet at this stage
-        )
+        asyncio.create_task(self.populate_vts_expressions())
         self.main_window.emotion_editor_frame.repaint() # Force repaint after populating
 
         # Set initial state of mode_selector based on current input_type_selector selection
         self._input_type_changed(self.main_window.input_type_selector.currentText())
+
+    async def populate_vts_expressions(self):
+        """Fetches VTS expressions and populates the UI."""
+        config_path = os.path.join(os.path.dirname(__file__), '..', 'vts_config.yaml')
+        self.app_core = ApplicationCore(config_path=config_path)
+        expressions = await self.app_core.get_vts_expressions()
+        self.main_window.populate_emotion_editor(
+            self.app_core.config.get('emotion_mappings', {}),
+            expressions
+        )
 
     def _save_config_setting(self, section: str, key: str, value: any):
         try:
@@ -144,6 +150,56 @@ class AppUI:
         else:
             self.main_window.mode_selector.setEnabled(True)
 
+    def __init__(self):
+        self.app_core_task = None
+        self.current_language = "en"
+        self.app_core = None
+
+        # Initial UI setup
+        config_path = os.path.join(os.path.dirname(__file__), '..', 'vts_config.yaml')
+        self.config_path = config_path # Store config_path for later use
+        initial_config = load_initial_config()
+
+        self.main_window = MainWindow(config_path=config_path, initial_config=initial_config if initial_config is not None else {})
+
+        # Connect signals
+        self.main_window.start_button.clicked.connect(self._start_button_clicked)
+        self.main_window.stop_button.clicked.connect(self._stop_button_clicked)
+        self.main_window.language_selector.currentTextChanged.connect(self._language_changed)
+        self.main_window.microphone_selector.currentTextChanged.connect(self._microphone_changed)
+        self.main_window.webcam_selector.currentTextChanged.connect(self._webcam_changed)
+        self.main_window.input_type_selector.currentTextChanged.connect(self._input_type_changed)
+
+        # Populate device selectors
+        self._populate_microphone_selector(initial_config)
+        self._populate_webcam_selector(initial_config)
+
+        if initial_config:
+            self.main_window.populate_keyword_editor(initial_config.get('expressions', {}))
+        else:
+            logger.warning("Initial config not loaded, starting with empty expressions.")
+
+        logger.debug(f"AppUI: Before show() - Central Widget Visible={self.main_window.centralWidget().isVisible()}, Emotion Editor Frame Visible={self.main_window.emotion_editor_frame.isVisible()}")
+        self.main_window.show()
+        logger.debug(f"AppUI: After show() - Central Widget Visible={self.main_window.centralWidget().isVisible()}, Emotion Editor Frame Visible={self.main_window.emotion_editor_frame.isVisible()}")
+
+        # Populate emotion editor on startup with existing mappings and an empty list for available VTS expressions
+        asyncio.create_task(self.populate_vts_expressions())
+        self.main_window.emotion_editor_frame.repaint() # Force repaint after populating
+
+        # Set initial state of mode_selector based on current input_type_selector selection
+        self._input_type_changed(self.main_window.input_type_selector.currentText())
+
+    async def populate_vts_expressions(self):
+        """Fetches VTS expressions and populates the UI."""
+        config_path = os.path.join(os.path.dirname(__file__), '..', 'vts_config.yaml')
+        self.app_core = ApplicationCore(config_path=config_path)
+        expressions = await self.app_core.get_vts_expressions()
+        self.main_window.populate_emotion_editor(
+            self.app_core.config.get('emotion_mappings', {}),
+            expressions
+        )
+
     def _start_button_clicked(self):
         logger.info("--- UI: Start button clicked ---")
         self.app_core_task = asyncio.create_task(self.start_application())
@@ -172,25 +228,12 @@ class AppUI:
         else:
             input_type = "voice" # Default to voice
 
-        config_path = os.path.join(os.path.dirname(__file__), '..', 'vts_config.yaml')
-        app_core = ApplicationCore(
-            config_path=config_path,
-            recognition_mode=recognition_mode,
-            language=self.current_language,
-            input_type=input_type
-        )
-
-        # Initialize components first to get VTS expressions
-        await app_core._initialize_components()
-
-        # Populate emotion editor in UI
-        self.main_window.populate_emotion_editor(
-            app_core.config.get('emotion_mappings', {}),
-            app_core.available_vts_expression_names
-        )
+        self.app_core.recognition_mode = recognition_mode
+        self.app_core.language = self.current_language
+        self.app_core.input_type = input_type
 
         # Setup listeners on the running instance
-        transcription_queue = await app_core.event_bus.subscribe("transcription_received")
+        transcription_queue = await self.app_core.event_bus.subscribe("transcription_received")
         hotkey_queue = await app_core.event_bus.subscribe("hotkey_triggered")
         vts_status_queue = await app_core.event_bus.subscribe("vts_status_update")
         asr_status_queue = await app_core.event_bus.subscribe("asr_status_update")
@@ -211,8 +254,7 @@ class AppUI:
 
         try:
             logger.debug("Attempting to run app_core...")
-            # Now run the core without re-initializing components
-            await app_core.run_without_init() # We will create this new method in ApplicationCore
+            await self.app_core.run()
         except asyncio.CancelledError:
             logger.info("Application core task was cancelled by UI.")
         finally:
