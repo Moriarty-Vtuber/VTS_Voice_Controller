@@ -55,11 +55,18 @@ class AppUI:
         logger.debug(f"AppUI: After show() - Central Widget Visible={self.main_window.centralWidget().isVisible()}, Emotion Editor Frame Visible={self.main_window.emotion_editor_frame.isVisible()}")
 
         # Populate emotion editor on startup with existing mappings and an empty list for available VTS expressions
-        asyncio.create_task(self.populate_vts_expressions())
+        self.main_window.populate_emotion_editor(
+            initial_config.get('emotion_mappings', {}),
+            [] # Available VTS expressions are not fetched yet at this stage
+        )
         self.main_window.emotion_editor_frame.repaint() # Force repaint after populating
 
         # Set initial state of mode_selector based on current input_type_selector selection
         self._input_type_changed(self.main_window.input_type_selector.currentText())
+
+    async def initialize(self):
+        """Asynchronously initializes components that require an event loop."""
+        await self.populate_vts_expressions()
 
     async def populate_vts_expressions(self):
         """Fetches VTS expressions and populates the UI."""

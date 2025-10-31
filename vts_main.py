@@ -29,6 +29,7 @@ def main():
     app_ui = AppUI()
     
     with loop:
+        asyncio.create_task(app_ui.initialize())
         loop.run_forever()
 
 if __name__ == "__main__":
