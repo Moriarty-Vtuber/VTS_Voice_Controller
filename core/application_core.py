@@ -120,6 +120,7 @@ class ApplicationCore:
         tasks = [
             asyncio.create_task(self.intent_resolver.resolve_intent()),
             asyncio.create_task(self._input_consumer()),
+            asyncio.create_task(self._handle_hotkey_events()),
         ]
 
         if self.input_type == "emotion_detection":
@@ -167,6 +168,24 @@ class ApplicationCore:
                 break
             except Exception as e:
                 logger.error(f"Error in emotion event handler: {e}")
+
+    async def _handle_hotkey_events(self):
+        """Consumes hotkey triggered events and triggers VTS hotkeys."""
+        hotkey_queue = await self.event_bus.subscribe("hotkey_triggered")
+        while True:
+            try:
+                event = await hotkey_queue.get()
+                hotkey_id = event.payload
+                if "emotion" in hotkey_id:
+                    continue
+                logger.info(f"Hotkey event received. Triggering VTube Studio hotkey: {hotkey_id}")
+                await self.vts_service.trigger_hotkey(hotkey_id)
+                hotkey_queue.task_done()
+            except asyncio.CancelledError:
+                logger.info("Hotkey event handler task cancelled.")
+                break
+            except Exception as e:
+                logger.error(f"Error in hotkey event handler: {e}")
 
     async def _input_consumer(self):
         """Consumes inputs from the active input processor and publishes them to the event bus."""

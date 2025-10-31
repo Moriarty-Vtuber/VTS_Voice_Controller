@@ -251,7 +251,6 @@ class AppUI:
 
         listener_tasks = [
             asyncio.create_task(self._handle_transcription_events(transcription_queue)),
-            asyncio.create_task(self._handle_hotkey_events(hotkey_queue)),
             asyncio.create_task(self._handle_vts_status_events(vts_status_queue)),
             asyncio.create_task(self._handle_asr_status_events(asr_status_queue)),
             asyncio.create_task(self._handle_asr_ready_events(asr_ready_queue)),
@@ -307,15 +306,6 @@ class AppUI:
                 break
             except Exception as e:
                 logger.error(f"Error handling VTS model changed event: {e}")
-
-    async def _handle_hotkey_events(self, queue: asyncio.Queue):
-        while True:
-            try:
-                event = await queue.get()
-                self.main_window.append_log(f">>> Triggered: {event.payload}")
-                queue.task_done()
-            except asyncio.CancelledError:
-                break
 
     async def _handle_vts_status_events(self, queue: asyncio.Queue):
         while True:
