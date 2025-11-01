@@ -111,7 +111,7 @@ class ApplicationCore:
         while True:
             event = await hotkey_queue.get()
             await self.vts_service.trigger_hotkey(event.payload)
-            queue.task_done()
+            hotkey_queue.task_done()
 
     async def _input_consumer(self):
         try:

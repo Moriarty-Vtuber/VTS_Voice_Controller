@@ -25,11 +25,13 @@ def main():
     loop = QEventLoop(app)
     asyncio.set_event_loop(loop)
 
-    # --- Create and run the application ---
+    # Create and run the application
     app_ui = AppUI()
-    
+
+    # Run the initialization task separately
+    asyncio.run(app_ui.initialize())
+
     with loop:
-        asyncio.create_task(app_ui.initialize())
         loop.run_forever()
 
 if __name__ == "__main__":

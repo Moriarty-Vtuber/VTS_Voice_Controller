@@ -1,10 +1,26 @@
-
-vts_settings:
-  vts_host: "localhost"
-  vts_port: 8001
-  token_file: "token.txt"
 expressions:
-  Expression1:
-    name: "Test Expression"
-    keywords: ["test"]
-    cooldown_s: 10
+  EyesCry.exp3.json:
+    cooldown_s: 60
+    keywords:
+    - cry
+    name: Eyes Cry
+  EyesLove.exp3.json:
+    cooldown_s: 60
+    keywords:
+    - love
+    name: Heart Eyes
+  SignAngry.exp3.json:
+    cooldown_s: 60
+    keywords:
+    - angry
+    name: Angry Sign
+  SignShock.exp3.json:
+    cooldown_s: 60
+    keywords:
+    - KEYWORD_Shock_Sign
+    name: Shock Sign
+vts_settings:
+  selected_microphone_name: INPUT (2- Volt 1)
+  token_file: token.txt
+  vts_host: localhost
+  vts_port: 8001

@@ -29,7 +29,7 @@ class ExpressionService:
 
     async def _get_vts_expressions(self) -> list:
         """Fetches ToggleExpression hotkeys from VTube Studio."""
-        if not self.vts_service or not self.vts_service.is_connected():
+        if not self.vts_service or not self.vts_service.vts.get_connection_status():
             return []
         try:
             response = await self.vts_service.get_hotkey_list()

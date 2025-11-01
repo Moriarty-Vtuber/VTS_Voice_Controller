@@ -1,3 +1,4 @@
+import asyncio
 from loguru import logger
 from core.event_bus import EventBus, Event
 from core.vts_service import VTubeStudioService
