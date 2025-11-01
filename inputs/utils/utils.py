@@ -4,6 +4,7 @@ import tarfile
 from tqdm import tqdm
 from loguru import logger
 
+
 def ensure_model_downloaded_and_extracted(model_url: str, model_base_dir: str) -> str:
     """Downloads and extracts the ASR model if not already present."""
     model_name = model_url.split("/")[-1].replace(".tar.bz2", "")
@@ -12,7 +13,8 @@ def ensure_model_downloaded_and_extracted(model_url: str, model_base_dir: str) -
 
     # Check if the model directory already exists and seems complete
     if os.path.exists(model_dir) and os.path.exists(os.path.join(model_dir, "tokens.txt")):
-        logger.info(f"✅ Model already extracted and complete at {model_dir}. Skipping download/extraction.")
+        logger.info(
+            f"✅ Model already extracted and complete at {model_dir}. Skipping download/extraction.")
         return model_dir
 
     os.makedirs(model_base_dir, exist_ok=True)

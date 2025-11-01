@@ -1,56 +1,67 @@
-
-import asyncio
-import time
 from loguru import logger
+from core.event_bus import EventBus, Event
+from core.vts_service import VTubeStudioService
 
-from core.interfaces import IntentResolver
-from core.event_bus import EventBus
 
-class KeywordIntentResolver(IntentResolver):
+class KeywordIntentResolver:
     def __init__(self, event_bus: EventBus, expression_map: dict):
         self.event_bus = event_bus
         self.expression_map = expression_map
-        self.last_triggered_expression = None
-        self.consecutive_trigger_count = 0
-        self.expression_cooldowns = {}
-
-    async def _process_one_event(self, transcribed_text: str):
-        logger.debug(f"Intent resolver received: {transcribed_text}")
-
-        if not isinstance(transcribed_text, str) or not transcribed_text:
-            if transcribed_text:
-                logger.warning(f"KeywordIntentResolver received non-string payload: {type(transcribed_text)} - {transcribed_text}")
-            return
-
-        logger.info(f"Transcribed: {transcribed_text}")
-        lower_transcribed_text = transcribed_text.lower()
-
-        for keyword, trigger_data in self.expression_map.items():
-            if keyword.lower() in lower_transcribed_text:
-                hotkey_id = trigger_data["hotkeyID"]
-                cooldown_duration = trigger_data["cooldown_s"]
-
-                if hotkey_id in self.expression_cooldowns and time.time() < self.expression_cooldowns[hotkey_id]:
-                    remaining = self.expression_cooldowns[hotkey_id] - time.time()
-                    logger.info(f"Keyword '{keyword}' detected, but expression {hotkey_id} is on cooldown for {remaining:.1f} more seconds.")
-                    continue
-
-                if hotkey_id == self.last_triggered_expression:
-                    self.consecutive_trigger_count += 1
-                else:
-                    self.last_triggered_expression = hotkey_id
-                    self.consecutive_trigger_count = 1
-
-                if self.consecutive_trigger_count == 2:
-                    self.expression_cooldowns[hotkey_id] = time.time() + cooldown_duration
-                    logger.warning(f"Expression {hotkey_id} triggered twice consecutively. Placing on cooldown for {cooldown_duration} seconds.")
-
-                logger.info(f"Keyword '{keyword}' detected. Triggering expression: {hotkey_id}")
-                await self.event_bus.publish("hotkey_triggered", hotkey_id)
+        self.vts_service = VTubeStudioService
+        self.active_cooldowns = {}
+        logger.info(
+            f"KeywordIntentResolver initialized with {len(expression_map)} keywords.")
 
     async def resolve_intent(self):
         transcription_queue = await self.event_bus.subscribe("transcription_received")
         while True:
             event = await transcription_queue.get()
-            await self._process_one_event(event.payload)
-            transcription_queue.task_done()
+            transcription = event.payload.lower()
+            logger.debug(f"Received transcription: {transcription}")
+
+            matched_keyword = self._find_matching_keyword(transcription)
+
+            if matched_keyword:
+                expression_data = self.expression_map[matched_keyword]
+                hotkey_id = expression_data.get("hotkeyID")
+                cooldown_s = expression_data.get("cooldown_s", 0)
+
+                if self._is_hotkey_on_cooldown(hotkey_id):
+                    logger.debug(
+                        f"Hotkey {hotkey_id} is on cooldown. Skipping.")
+                    continue
+
+                logger.info(
+                    f"Keyword '{matched_keyword}' matched. Triggering hotkey: {hotkey_id}")
+                await self.event_bus.publish("hotkey_triggered", hotkey_id)
+
+                if cooldown_s > 0:
+                    self._start_cooldown(hotkey_id, cooldown_s)
+
+    def _find_matching_keyword(self, transcription: str) -> str | None:
+        """
+        Finds the first matching keyword in the transcription.
+        Returns the keyword string if found, otherwise None.
+        """
+        for keyword in self.expression_map.keys():
+            if keyword in transcription:
+                return keyword
+        return None
+
+    def _is_hotkey_on_cooldown(self, hotkey_id: str) -> bool:
+        """
+        Checks if a hotkey is currently on cooldown.
+        """
+        cooldown_end_time = self.active_cooldowns.get(hotkey_id)
+        if cooldown_end_time and asyncio.get_event_loop().time() < cooldown_end_time:
+            return True
+        return False
+
+    def _start_cooldown(self, hotkey_id: str, cooldown_s: int):
+        """
+        Starts a cooldown for a given hotkey.
+        """
+        cooldown_end_time = asyncio.get_event_loop().time() + cooldown_s
+        self.active_cooldowns[hotkey_id] = cooldown_end_time
+        logger.debug(
+            f"Cooldown started for hotkey {hotkey_id}. Ends in {cooldown_s}s.")

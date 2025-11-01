@@ -3,6 +3,7 @@ from loguru import logger
 import pyvts
 from core.event_bus import EventBus
 
+
 class VTubeStudioService:
     """Service to interact with the VTube Studio API via WebSocket."""
 
@@ -28,13 +29,16 @@ class VTubeStudioService:
                 await self.event_bus.publish("vts_status_update", "Connected")
                 return
             except Exception as e:
-                logger.warning(f"Connection attempt {attempt + 1} of {max_retries} failed: {e}")
+                logger.warning(
+                    f"Connection attempt {attempt + 1} of {max_retries} failed: {e}")
                 if attempt < max_retries - 1:
                     logger.info(f"Retrying in {retry_delay} seconds...")
                     await asyncio.sleep(retry_delay)
                 else:
-                    logger.error("Could not connect to VTube Studio after all retries.")
-                    logger.error("Please ensure VTube Studio is running and the API is enabled on port 8001.")
+                    logger.error(
+                        "Could not connect to VTube Studio after all retries.")
+                    logger.error(
+                        "Please ensure VTube Studio is running and the API is enabled on port 8001.")
                     await self.event_bus.publish("vts_status_update", "Connection Failed")
                     raise
 
@@ -48,7 +52,8 @@ class VTubeStudioService:
                 logger.info("Authenticated successfully with VTube Studio.")
                 await self.event_bus.publish("vts_status_update", "Authenticated")
             else:
-                logger.warning("Authentication failed. Please allow the plugin in VTube Studio.")
+                logger.warning(
+                    "Authentication failed. Please allow the plugin in VTube Studio.")
                 await self.event_bus.publish("vts_status_update", "Authentication Failed")
         except Exception as e:
             logger.error(f"Authentication error: {e}")
@@ -63,7 +68,8 @@ class VTubeStudioService:
             if "hotkeyID" in response.get("data", {}):
                 logger.info(f"Triggered hotkey: {hotkey_id}")
             else:
-                logger.warning(f"Failed to trigger hotkey {hotkey_id}. Response: {response}")
+                logger.warning(
+                    f"Failed to trigger hotkey {hotkey_id}. Response: {response}")
         except Exception as e:
             logger.error(f"Failed to trigger hotkey '{hotkey_id}': {e}")
 

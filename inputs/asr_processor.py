@@ -6,12 +6,12 @@ import sherpa_onnx
 from loguru import logger
 import onnxruntime
 import webrtcvad
-from collections import deque
 from typing import AsyncGenerator
 
 from core.interfaces import ASRProcessor
 from core.event_bus import EventBus
 from inputs.utils.utils import ensure_model_downloaded_and_extracted
+
 
 class SherpaOnnxASRProcessor(ASRProcessor):
     def __init__(self, event_bus: EventBus):
@@ -38,7 +38,8 @@ class SherpaOnnxASRProcessor(ASRProcessor):
 
     async def initialize(self, config: dict, language: str, model_url: str, model_base_dir: str, microphone_name: str = "Default"):
         self.model_config = config
-        self.model_dir = os.path.join(model_base_dir, self.model_config.get("path", ""))
+        self.model_dir = os.path.join(
+            model_base_dir, self.model_config.get("path", ""))
         self.recognition_mode = config.get("recognition_mode", "fast")
         self.provider = config.get("provider", "cpu")
         self.decoding_method = config.get("decoding_method", "greedy_search")
@@ -51,26 +52,31 @@ class SherpaOnnxASRProcessor(ASRProcessor):
         await self.event_bus.publish("asr_status_update", "Initializing")
 
         # Ensure model is downloaded and extracted
-        actual_model_dir = ensure_model_downloaded_and_extracted(model_url, model_base_dir)
-        self.model_dir = actual_model_dir # Set the model_dir to the actual extracted directory
+        actual_model_dir = ensure_model_downloaded_and_extracted(
+            model_url, model_base_dir)
+        # Set the model_dir to the actual extracted directory
+        self.model_dir = actual_model_dir
 
         if self.provider == "cuda":
             try:
                 if "CUDAExecutionProvider" not in onnxruntime.get_available_providers():
-                    logger.warning("CUDA provider not available for ONNX. Falling back to CPU.")
+                    logger.warning(
+                        "CUDA provider not available for ONNX. Falling back to CPU.")
                     self.provider = "cpu"
             except ImportError:
-                logger.warning("ONNX Runtime not installed. Falling back to CPU.")
+                logger.warning(
+                    "ONNX Runtime not installed. Falling back to CPU.")
                 self.provider = "cpu"
         logger.info(f"Sherpa-Onnx-ASR: Using {self.provider} for inference")
 
         self.recognizer = self._create_recognizer()
         self.stream = self.recognizer.create_stream()
-        
+
         # VAD initialization
         self.vad = webrtcvad.Vad(vad_aggressiveness)
-        self.vad_frame_size = int(self.SAMPLE_RATE * self.vad_frame_duration_ms / 1000)
-        
+        self.vad_frame_size = int(
+            self.SAMPLE_RATE * self.vad_frame_duration_ms / 1000)
+
         await self.event_bus.publish("asr_status_update", "Ready")
 
     def _create_recognizer(self):
@@ -94,7 +100,8 @@ class SherpaOnnxASRProcessor(ASRProcessor):
                 rule3_min_utterance_length=3.0,
             )
         elif model_type == "sense-voice":
-            raise NotImplementedError(f"The '{model_type}' model type is not yet supported by the ASRProcessor.")
+            raise NotImplementedError(
+                f"The '{model_type}' model type is not yet supported by the ASRProcessor.")
         else:
             raise ValueError(f"Unsupported model_type: {model_type}")
 
@@ -115,16 +122,16 @@ class SherpaOnnxASRProcessor(ASRProcessor):
             if self.recognizer.is_endpoint(self.stream):
                 self.recognizer.reset(self.stream)
                 self.last_text = ""
-            
+
             return text_to_return
-        
-        else: # Accurate mode
+
+        else:  # Accurate mode
             text_to_return = ""
             if self.recognizer.is_endpoint(self.stream):
                 result = self.recognizer.get_result(self.stream)
                 text_to_return = result.strip()
                 self.recognizer.reset(self.stream)
-            
+
             return text_to_return
 
     async def _audio_callback(self, indata, frames, time, status):
@@ -136,7 +143,7 @@ class SherpaOnnxASRProcessor(ASRProcessor):
         self.vad_buffer += pcm_data
 
         # Process VAD frames
-        while len(self.vad_buffer) >= self.vad_frame_size * 2: # 2 bytes per int16 sample
+        while len(self.vad_buffer) >= self.vad_frame_size * 2:  # 2 bytes per int16 sample
             frame = self.vad_buffer[:self.vad_frame_size * 2]
             self.vad_buffer = self.vad_buffer[self.vad_frame_size * 2:]
 
@@ -147,8 +154,10 @@ class SherpaOnnxASRProcessor(ASRProcessor):
                 # If speech is detected, append to the ASR buffer
                 async with self.buffer_lock:
                     # Sherpa-onnx expects float32, so convert back
-                    float_frame = np.frombuffer(frame, dtype=np.int16).astype(np.float32) / 32767.0
-                    self.audio_buffer = np.concatenate((self.audio_buffer, float_frame))
+                    float_frame = np.frombuffer(
+                        frame, dtype=np.int16).astype(np.float32) / 32767.0
+                    self.audio_buffer = np.concatenate(
+                        (self.audio_buffer, float_frame))
 
     async def start_listening(self) -> AsyncGenerator[str, None]:
         self.running = True
@@ -157,7 +166,8 @@ class SherpaOnnxASRProcessor(ASRProcessor):
         loop = asyncio.get_running_loop()
 
         def sync_audio_callback(indata, frames, time, status):
-            asyncio.run_coroutine_threadsafe(self._audio_callback(indata, frames, time, status), loop)
+            asyncio.run_coroutine_threadsafe(
+                self._audio_callback(indata, frames, time, status), loop)
 
         async def process_audio_buffer_periodically():
             while self.running:
@@ -174,18 +184,20 @@ class SherpaOnnxASRProcessor(ASRProcessor):
                     transcribed_text = self._transcribe_np(audio_to_process)
 
                     if transcribed_text:
-                        logger.debug(f"ASR transcribed text: {transcribed_text}")
+                        logger.debug(
+                            f"ASR transcribed text: {transcribed_text}")
                         await self.event_bus.publish("transcription_received", transcribed_text)
                         await self.transcription_queue.put(transcribed_text)
                     else:
                         await self.event_bus.publish("asr_status_update", "Listening")
             logger.info("Audio processing task stopped.")
 
-        self.audio_processing_task = asyncio.create_task(process_audio_buffer_periodically())
+        self.audio_processing_task = asyncio.create_task(
+            process_audio_buffer_periodically())
 
         try:
             blocksize = self.vad_frame_size * 2
-            
+
             device_index = None
             if self.microphone_name != "Default":
                 devices = sd.query_devices()
@@ -193,12 +205,13 @@ class SherpaOnnxASRProcessor(ASRProcessor):
                     if dev['name'] == self.microphone_name and dev['max_input_channels'] > 0:
                         device_index = i
                         break
-            
+
             if device_index is None and self.microphone_name != "Default":
-                logger.warning(f"Selected microphone '{self.microphone_name}' not found. Using default.")
+                logger.warning(
+                    f"Selected microphone '{self.microphone_name}' not found. Using default.")
 
             with sd.InputStream(callback=sync_audio_callback,
-                                 channels=1, dtype='float32', samplerate=self.SAMPLE_RATE, blocksize=blocksize, device=device_index):
+                                channels=1, dtype='float32', samplerate=self.SAMPLE_RATE, blocksize=blocksize, device=device_index):
                 logger.info("Microphone stream started. Say something!")
                 await self.event_bus.publish("asr_ready", True)
                 while self.running:
@@ -225,7 +238,6 @@ class SherpaOnnxASRProcessor(ASRProcessor):
                     pass
             self.running = False
             logger.info("Microphone stream stopped.")
-
 
     async def stop_listening(self):
         self.running = False
