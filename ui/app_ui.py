@@ -157,46 +157,6 @@ class AppUI:
         else:
             self.main_window.mode_selector.setEnabled(True)
 
-    def __init__(self):
-        self.app_core_task = None
-        self.current_language = "en"
-        self.app_core = None
-
-        # Initial UI setup
-        config_path = os.path.join(os.path.dirname(__file__), '..', 'vts_config.yaml')
-        self.config_path = config_path # Store config_path for later use
-        initial_config = load_initial_config()
-
-        self.main_window = MainWindow(config_path=config_path, initial_config=initial_config if initial_config is not None else {})
-
-        # Connect signals
-        self.main_window.start_button.clicked.connect(self._start_button_clicked)
-        self.main_window.stop_button.clicked.connect(self._stop_button_clicked)
-        self.main_window.language_selector.currentTextChanged.connect(self._language_changed)
-        self.main_window.microphone_selector.currentTextChanged.connect(self._microphone_changed)
-        self.main_window.webcam_selector.currentTextChanged.connect(self._webcam_changed)
-        self.main_window.input_type_selector.currentTextChanged.connect(self._input_type_changed)
-
-        # Populate device selectors
-        self._populate_microphone_selector(initial_config)
-        self._populate_webcam_selector(initial_config)
-
-        if initial_config:
-            self.main_window.populate_keyword_editor(initial_config.get('expressions', {}))
-        else:
-            logger.warning("Initial config not loaded, starting with empty expressions.")
-
-        logger.debug(f"AppUI: Before show() - Central Widget Visible={self.main_window.centralWidget().isVisible()}, Emotion Editor Frame Visible={self.main_window.emotion_editor_frame.isVisible()}")
-        self.main_window.show()
-        logger.debug(f"AppUI: After show() - Central Widget Visible={self.main_window.centralWidget().isVisible()}, Emotion Editor Frame Visible={self.main_window.emotion_editor_frame.isVisible()}")
-
-        # Populate emotion editor on startup with existing mappings and an empty list for available VTS expressions
-        asyncio.create_task(self.populate_vts_expressions())
-        self.main_window.emotion_editor_frame.repaint() # Force repaint after populating
-
-        # Set initial state of mode_selector based on current input_type_selector selection
-        self._input_type_changed(self.main_window.input_type_selector.currentText())
-
     async def populate_vts_expressions(self):
         """Fetches VTS expressions and populates the UI."""
         config_path = os.path.join(os.path.dirname(__file__), '..', 'vts_config.yaml')

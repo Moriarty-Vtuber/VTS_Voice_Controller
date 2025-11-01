@@ -176,8 +176,6 @@ class ApplicationCore:
             try:
                 event = await hotkey_queue.get()
                 hotkey_id = event.payload
-                if "emotion" in hotkey_id:
-                    continue
                 logger.info(f"Hotkey event received. Triggering VTube Studio hotkey: {hotkey_id}")
                 await self.vts_service.trigger_hotkey(hotkey_id)
                 hotkey_queue.task_done()
