@@ -10,7 +10,7 @@ en:
     joiner: "joiner-epoch-99-avg-1.int8.onnx"
     tokens: "tokens.txt"
 
-ja:
+日本語:
   model_type: "transducer"
   model_name: "sherpa-onnx-zipformer-ja-reazonspeech-2024-08-01"
   url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-zipformer-ja-reazonspeech-2024-08-01.tar.bz2"
@@ -20,7 +20,7 @@ ja:
     joiner: "joiner-epoch-99-avg-1.int8.onnx"
     tokens: "tokens.txt"
 
-zh_hant:
+中文:
   model_type: "transducer"
   model_name: "sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20"
   url: "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20.tar.bz2"

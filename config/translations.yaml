@@ -27,7 +27,7 @@ en:
   microphone_label: "Microphone"
   webcam_label: "Webcam"
 
-ja:
+日本語:
   window_title: "VTS音声コントローラー"
   status_label: "ステータス"
   status_disconnected: "切断"
@@ -56,7 +56,7 @@ ja:
   microphone_label: "マイク"
   webcam_label: "ウェブカメラ"
 
-zh_hant:
+中文:
   window_title: "VTS 語音控制器"
   status_label: "狀態"
   status_disconnected: "已斷線"
